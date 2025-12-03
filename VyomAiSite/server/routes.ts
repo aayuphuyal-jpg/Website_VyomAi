@@ -13,8 +13,13 @@ import { validateEmailCredentials, fetchEmails, createEmailSession, validateEmai
 import PDFDocument from "pdfkit";
 import nodemailer from "nodemailer";
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// OpenAI client - initialized lazily when API key is available
+let openai: OpenAI | null = null;
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+} else {
+  console.log("⚠️ OPENAI_API_KEY not set - AI chatbot features will be disabled");
+}
 
 const tokens: Map<string, string> = new Map();
 
@@ -351,6 +356,12 @@ Always maintain a balance between being professional and approachable. Reference
           content: m.content,
         })),
       ];
+
+      if (!openai) {
+        return res.json({
+          response: "I'm sorry, but the AI service is not configured yet. Please contact us at info@vyomai.cloud for assistance."
+        });
+      }
 
       const completion = await openai.chat.completions.create({
         model: "gpt-5",
