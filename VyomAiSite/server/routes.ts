@@ -31,25 +31,31 @@ interface ExchangeRateCache {
 let exchangeRateCache: ExchangeRateCache | null = null;
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-// Fetch live exchange rates from free API
+// Fetch live exchange rates from multiple sources
 async function fetchLiveExchangeRates() {
   try {
-    // Using exchangerate-api.com free tier (no auth required)
     const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-    if (!response.ok) throw new Error('Failed to fetch rates');
+    if (!response.ok) throw new Error('Primary API failed');
     
     const data = await response.json();
+    
+    let nprRate = data.rates?.NPR;
+    if (!nprRate) {
+      const inrRate = data.rates?.INR || 83.12;
+      nprRate = inrRate * 1.6;
+    }
+    
     const rates = {
       USD: 1,
-      EUR: data.rates.EUR || 0.92,
-      INR: data.rates.INR || 83.12,
-      NPR: data.rates.NPR || 132.5,
+      EUR: data.rates?.EUR || 0.92,
+      INR: data.rates?.INR || 83.12,
+      NPR: nprRate || 132.5,
     };
     
+    console.log("✅ Exchange rates fetched:", rates);
     return rates;
   } catch (error) {
     console.error("❌ Exchange rate fetch error:", error);
-    // Return cached rates or defaults
     return {
       USD: 1,
       EUR: 0.92,
@@ -671,6 +677,77 @@ Always maintain a balance between being professional and approachable. Reference
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete pricing package" });
+    }
+  });
+
+  app.post("/api/admin/pricing/verify-conversion", authMiddleware, async (req, res) => {
+    try {
+      const { basePrice, baseCurrency, targetCurrency, convertedPrice } = req.body;
+      
+      if (!basePrice || !baseCurrency || !targetCurrency || convertedPrice === undefined) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const rates = await getExchangeRates(false);
+      const baseRate = rates[baseCurrency as keyof typeof rates] || 1;
+      const targetRate = rates[targetCurrency as keyof typeof rates] || 1;
+      const expectedPrice = Math.round((basePrice / baseRate) * targetRate * 100) / 100;
+      const deviation = Math.abs(expectedPrice - convertedPrice) / expectedPrice * 100;
+      
+      let aiVerification = null;
+      if (openai) {
+        try {
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content: "You are a financial verification assistant. Verify currency conversions and confirm accuracy. Be brief and precise."
+              },
+              {
+                role: "user",
+                content: `Verify this currency conversion:
+Base: ${basePrice} ${baseCurrency}
+Converted to: ${convertedPrice} ${targetCurrency}
+Exchange rates: ${JSON.stringify(rates)}
+Expected calculation: ${basePrice} / ${baseRate} (${baseCurrency} to USD) × ${targetRate} (USD to ${targetCurrency}) = ${expectedPrice}
+Deviation: ${deviation.toFixed(2)}%
+
+Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate": true/false, "message": "brief explanation"}`
+              }
+            ],
+            max_tokens: 150
+          });
+          
+          const response = completion.choices[0]?.message?.content || "";
+          try {
+            aiVerification = JSON.parse(response);
+          } catch {
+            aiVerification = { accurate: deviation < 1, message: response };
+          }
+        } catch (aiError) {
+          console.error("AI verification error:", aiError);
+          aiVerification = { accurate: deviation < 1, message: "AI verification unavailable, using mathematical check" };
+        }
+      } else {
+        aiVerification = { accurate: deviation < 1, message: "AI not configured, using mathematical verification" };
+      }
+
+      res.json({
+        success: true,
+        basePrice,
+        baseCurrency,
+        targetCurrency,
+        convertedPrice,
+        expectedPrice,
+        deviation: deviation.toFixed(2),
+        isAccurate: deviation < 1,
+        aiVerification,
+        rates
+      });
+    } catch (error) {
+      console.error("Price verification error:", error);
+      res.status(500).json({ error: "Failed to verify price conversion" });
     }
   });
 

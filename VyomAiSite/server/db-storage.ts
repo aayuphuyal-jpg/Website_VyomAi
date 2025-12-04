@@ -582,48 +582,77 @@ export class DatabaseStorage implements IStorage {
     return {} as VisitorStats;
   }
 
+  async updateVisitorStats(data: Partial<VisitorStats>): Promise<VisitorStats> {
+    try {
+      const existing = await db.select().from(visitorStatsTable).limit(1);
+      const updateData: any = {};
+      
+      if (data.totalVisitors !== undefined) updateData.totalVisitors = String(data.totalVisitors);
+      if (data.todayVisitors !== undefined) updateData.todayVisitors = String(data.todayVisitors);
+      if (data.hourlyData !== undefined) updateData.hourlyData = JSON.stringify(data.hourlyData);
+      if (data.trafficSources !== undefined) updateData.trafficSources = JSON.stringify(data.trafficSources);
+      if (data.deviceTypes !== undefined) updateData.deviceTypes = JSON.stringify(data.deviceTypes);
+      if (data.engagementMetrics !== undefined) updateData.engagementMetrics = JSON.stringify(data.engagementMetrics);
+      if (data.topPages !== undefined) updateData.topPages = JSON.stringify(data.topPages);
+      if (data.socialMediaStats !== undefined) updateData.socialMediaStats = JSON.stringify(data.socialMediaStats);
+
+      if (existing.length > 0 && existing[0].id) {
+        await db.update(visitorStatsTable).set(updateData).where(eq(visitorStatsTable.id, existing[0].id));
+      } else {
+        const id = randomUUID();
+        await db.insert(visitorStatsTable).values({
+          id,
+          totalVisitors: updateData.totalVisitors || "0",
+          todayVisitors: updateData.todayVisitors || "0",
+          hourlyData: updateData.hourlyData || "[]",
+          trafficSources: updateData.trafficSources || "[]",
+          deviceTypes: updateData.deviceTypes || "[]",
+          engagementMetrics: updateData.engagementMetrics || "[]",
+          topPages: updateData.topPages || "[]",
+          socialMediaStats: updateData.socialMediaStats || "[]",
+        });
+      }
+      return this.getVisitorStats();
+    } catch (error) {
+      console.error("DB: updateVisitorStats error:", error);
+      throw error;
+    }
+  }
+
   async incrementVisitors(): Promise<VisitorStats> {
     const stats = await this.getVisitorStats();
-    const updated = {
+    return this.updateVisitorStats({
       totalVisitors: (stats.totalVisitors || 0) + 1,
       todayVisitors: (stats.todayVisitors || 0) + 1,
-    };
-    return this.updateSettings(updated as any) as Promise<VisitorStats>;
+    });
   }
 
   async resetHourlyData(): Promise<VisitorStats> {
-    const stats = await this.getVisitorStats();
-    return this.updateSettings({ ...stats, hourlyData: [] } as any) as Promise<VisitorStats>;
+    return this.updateVisitorStats({ hourlyData: [] });
   }
 
   async resetTrafficSources(): Promise<VisitorStats> {
-    const stats = await this.getVisitorStats();
-    return this.updateSettings({ ...stats, trafficSources: [] } as any) as Promise<VisitorStats>;
+    return this.updateVisitorStats({ trafficSources: [] });
   }
 
   async resetDeviceTypes(): Promise<VisitorStats> {
-    const stats = await this.getVisitorStats();
-    return this.updateSettings({ ...stats, deviceTypes: [] } as any) as Promise<VisitorStats>;
+    return this.updateVisitorStats({ deviceTypes: [] });
   }
 
   async resetTopPages(): Promise<VisitorStats> {
-    const stats = await this.getVisitorStats();
-    return this.updateSettings({ ...stats, topPages: [] } as any) as Promise<VisitorStats>;
+    return this.updateVisitorStats({ topPages: [] });
   }
 
   async resetEngagementMetrics(): Promise<VisitorStats> {
-    const stats = await this.getVisitorStats();
-    return this.updateSettings({ ...stats, engagementMetrics: [] } as any) as Promise<VisitorStats>;
+    return this.updateVisitorStats({ engagementMetrics: [] });
   }
 
   async resetSocialMediaStats(): Promise<VisitorStats> {
-    const stats = await this.getVisitorStats();
-    return this.updateSettings({ ...stats, socialMediaStats: [] } as any) as Promise<VisitorStats>;
+    return this.updateVisitorStats({ socialMediaStats: [] });
   }
 
   async resetTotalVisitors(): Promise<VisitorStats> {
-    const stats = await this.getVisitorStats();
-    return this.updateSettings({ ...stats, totalVisitors: 0, todayVisitors: 0 } as any) as Promise<VisitorStats>;
+    return this.updateVisitorStats({ totalVisitors: 0, todayVisitors: 0 });
   }
 
   async getSocialMediaAnalytics(): Promise<SocialMediaAnalytics[]> {
