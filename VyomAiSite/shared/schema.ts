@@ -494,3 +494,199 @@ export const customerInquiriesTable = pgTable("customer_inquiries", {
   status: varchar("status").default("new"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+// ============== HOME PAGE CONTENT SCHEMAS ==============
+
+// Hero Section Content
+export const heroContentSchema = z.object({
+  id: z.string(),
+  badgeText: z.string().default("Pioneering AI Solutions from Nepal"),
+  titleLine1: z.string().default("Transform Your"),
+  titleLine2: z.string().default("Business with AI"),
+  subtitle: z.string().default("We build intelligent AI agents and seamlessly integrate with Google, Microsoft, and enterprise platforms. Share knowledge, empower your team, and grow together."),
+  primaryButtonText: z.string().default("Get Started"),
+  primaryButtonLink: z.string().default("#contact"),
+  secondaryButtonText: z.string().default("Watch Demo"),
+  secondaryButtonLink: z.string().default("#media"),
+  backgroundStyle: z.enum(["particles", "gradient", "image"]).default("particles"),
+  backgroundImageUrl: z.string().optional(),
+  enabled: z.boolean().default(true),
+  updatedAt: z.string().optional(),
+});
+
+export const insertHeroContentSchema = heroContentSchema.omit({ id: true, updatedAt: true });
+export type HeroContent = z.infer<typeof heroContentSchema>;
+export type InsertHeroContent = z.infer<typeof insertHeroContentSchema>;
+
+// About Section Content
+export const aboutContentSchema = z.object({
+  id: z.string(),
+  badgeText: z.string().default("About VyomAi"),
+  titleHighlight: z.string().default("Pioneering AI"),
+  titleNormal: z.string().default(" in Nepal"),
+  description: z.string().default("VyomAi Pvt Ltd is a startup company dedicated to AI technology research and development. Based in Tokha, Kathmandu, Nepal, we work tirelessly to provide the best AI product solutions and consulting services for organizations seeking to embrace the future."),
+  enabled: z.boolean().default(true),
+  updatedAt: z.string().optional(),
+});
+
+export const insertAboutContentSchema = aboutContentSchema.omit({ id: true, updatedAt: true });
+export type AboutContent = z.infer<typeof aboutContentSchema>;
+export type InsertAboutContent = z.infer<typeof insertAboutContentSchema>;
+
+// About Value Cards
+export const aboutValueSchema = z.object({
+  id: z.string(),
+  icon: z.string().default("Target"),
+  title: z.string(),
+  description: z.string(),
+  order: z.number().default(0),
+  enabled: z.boolean().default(true),
+  createdAt: z.string().optional(),
+});
+
+export const insertAboutValueSchema = aboutValueSchema.omit({ id: true, createdAt: true });
+export type AboutValue = z.infer<typeof aboutValueSchema>;
+export type InsertAboutValue = z.infer<typeof insertAboutValueSchema>;
+
+// Services Section Content
+export const servicesContentSchema = z.object({
+  id: z.string(),
+  badgeText: z.string().default("Our Services"),
+  titleNormal: z.string().default("What We "),
+  titleHighlight: z.string().default("Offer"),
+  description: z.string().default("Comprehensive AI solutions designed to transform how your organization works, from automation to intelligent analytics."),
+  enabled: z.boolean().default(true),
+  updatedAt: z.string().optional(),
+});
+
+export const insertServicesContentSchema = servicesContentSchema.omit({ id: true, updatedAt: true });
+export type ServicesContent = z.infer<typeof servicesContentSchema>;
+export type InsertServicesContent = z.infer<typeof insertServicesContentSchema>;
+
+// Service Items
+export const serviceItemSchema = z.object({
+  id: z.string(),
+  icon: z.string().default("Bot"),
+  title: z.string(),
+  description: z.string(),
+  order: z.number().default(0),
+  enabled: z.boolean().default(true),
+  createdAt: z.string().optional(),
+});
+
+export const insertServiceItemSchema = serviceItemSchema.omit({ id: true, createdAt: true });
+export type ServiceItem = z.infer<typeof serviceItemSchema>;
+export type InsertServiceItem = z.infer<typeof insertServiceItemSchema>;
+
+// Solutions Section Content
+export const solutionsContentSchema = z.object({
+  id: z.string(),
+  badgeText: z.string().default("AI Solutions"),
+  titleHighlight: z.string().default("Enterprise"),
+  titleNormal: z.string().default(" Integrations"),
+  description: z.string().default("Connect AI capabilities with the platforms you already use. Transform your workflows without disrupting your team."),
+  enabled: z.boolean().default(true),
+  updatedAt: z.string().optional(),
+});
+
+export const insertSolutionsContentSchema = solutionsContentSchema.omit({ id: true, updatedAt: true });
+export type SolutionsContent = z.infer<typeof solutionsContentSchema>;
+export type InsertSolutionsContent = z.infer<typeof solutionsContentSchema>;
+
+// Solution Items
+export const solutionItemSchema = z.object({
+  id: z.string(),
+  icon: z.string().default("Globe"),
+  title: z.string(),
+  description: z.string(),
+  features: z.array(z.string()).default([]),
+  gradientFrom: z.string().default("blue-500/20"),
+  gradientTo: z.string().default("green-500/20"),
+  order: z.number().default(0),
+  enabled: z.boolean().default(true),
+  createdAt: z.string().optional(),
+});
+
+export const insertSolutionItemSchema = solutionItemSchema.omit({ id: true, createdAt: true });
+export type SolutionItem = z.infer<typeof solutionItemSchema>;
+export type InsertSolutionItem = z.infer<typeof insertSolutionItemSchema>;
+
+// Drizzle ORM table definitions for home page content
+export const heroContentTable = pgTable("hero_content", {
+  id: varchar("id").primaryKey(),
+  badgeText: varchar("badge_text").default("Pioneering AI Solutions from Nepal"),
+  titleLine1: varchar("title_line1").default("Transform Your"),
+  titleLine2: varchar("title_line2").default("Business with AI"),
+  subtitle: text("subtitle"),
+  primaryButtonText: varchar("primary_button_text").default("Get Started"),
+  primaryButtonLink: varchar("primary_button_link").default("#contact"),
+  secondaryButtonText: varchar("secondary_button_text").default("Watch Demo"),
+  secondaryButtonLink: varchar("secondary_button_link").default("#media"),
+  backgroundStyle: varchar("background_style").default("particles"),
+  backgroundImageUrl: varchar("background_image_url"),
+  enabled: boolean("enabled").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const aboutContentTable = pgTable("about_content", {
+  id: varchar("id").primaryKey(),
+  badgeText: varchar("badge_text").default("About VyomAi"),
+  titleHighlight: varchar("title_highlight").default("Pioneering AI"),
+  titleNormal: varchar("title_normal").default(" in Nepal"),
+  description: text("description"),
+  enabled: boolean("enabled").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const aboutValuesTable = pgTable("about_values", {
+  id: varchar("id").primaryKey(),
+  icon: varchar("icon").default("Target"),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  order: text("display_order").default("0"),
+  enabled: boolean("enabled").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const servicesContentTable = pgTable("services_content", {
+  id: varchar("id").primaryKey(),
+  badgeText: varchar("badge_text").default("Our Services"),
+  titleNormal: varchar("title_normal").default("What We "),
+  titleHighlight: varchar("title_highlight").default("Offer"),
+  description: text("description"),
+  enabled: boolean("enabled").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const serviceItemsTable = pgTable("service_items", {
+  id: varchar("id").primaryKey(),
+  icon: varchar("icon").default("Bot"),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  order: text("display_order").default("0"),
+  enabled: boolean("enabled").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const solutionsContentTable = pgTable("solutions_content", {
+  id: varchar("id").primaryKey(),
+  badgeText: varchar("badge_text").default("AI Solutions"),
+  titleHighlight: varchar("title_highlight").default("Enterprise"),
+  titleNormal: varchar("title_normal").default(" Integrations"),
+  description: text("description"),
+  enabled: boolean("enabled").default(true),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const solutionItemsTable = pgTable("solution_items", {
+  id: varchar("id").primaryKey(),
+  icon: varchar("icon").default("Globe"),
+  title: varchar("title").notNull(),
+  description: text("description").notNull(),
+  features: text("features").default("[]"),
+  gradientFrom: varchar("gradient_from").default("blue-500/20"),
+  gradientTo: varchar("gradient_to").default("green-500/20"),
+  order: text("display_order").default("0"),
+  enabled: boolean("enabled").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});

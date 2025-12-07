@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Article, type InsertArticle, type SiteSettings, type VisitorStats, type TeamMember, type InsertTeamMember, type PricingPackage, type InsertPricingPackage, type ProjectDiscussion, type InsertProjectDiscussion, type BookingRequest, type InsertBookingRequest, type SocialMediaAnalytics, type InsertSocialMediaAnalytics, type SocialMediaIntegration, type InsertSocialMediaIntegration, type OneTimePricingRequest, type InsertOneTimePricingRequest } from "@shared/schema";
+import { type User, type InsertUser, type Article, type InsertArticle, type SiteSettings, type VisitorStats, type TeamMember, type InsertTeamMember, type PricingPackage, type InsertPricingPackage, type ProjectDiscussion, type InsertProjectDiscussion, type BookingRequest, type InsertBookingRequest, type SocialMediaAnalytics, type InsertSocialMediaAnalytics, type SocialMediaIntegration, type InsertSocialMediaIntegration, type OneTimePricingRequest, type InsertOneTimePricingRequest, type HeroContent, type InsertHeroContent, type AboutContent, type InsertAboutContent, type AboutValue, type InsertAboutValue, type ServicesContent, type InsertServicesContent, type ServiceItem, type InsertServiceItem, type SolutionsContent, type InsertSolutionsContent, type SolutionItem, type InsertSolutionItem } from "@shared/schema";
 import { randomUUID } from "crypto";
 import bcryptjs from "bcryptjs";
 import { DatabaseStorage } from "./db-storage";
@@ -66,6 +66,34 @@ export interface IStorage {
   getOneTimePricingRequests(): Promise<OneTimePricingRequest[]>;
   updateOneTimePricingRequest(id: string, request: Partial<InsertOneTimePricingRequest>): Promise<OneTimePricingRequest | undefined>;
   deleteOneTimePricingRequest(id: string): Promise<boolean>;
+  
+  // Home Page Content Management
+  getHeroContent(): Promise<HeroContent | undefined>;
+  updateHeroContent(data: Partial<InsertHeroContent>): Promise<HeroContent>;
+  
+  getAboutContent(): Promise<AboutContent | undefined>;
+  updateAboutContent(data: Partial<InsertAboutContent>): Promise<AboutContent>;
+  
+  getAboutValues(): Promise<AboutValue[]>;
+  createAboutValue(value: InsertAboutValue): Promise<AboutValue>;
+  updateAboutValue(id: string, value: Partial<InsertAboutValue>): Promise<AboutValue | undefined>;
+  deleteAboutValue(id: string): Promise<boolean>;
+  
+  getServicesContent(): Promise<ServicesContent | undefined>;
+  updateServicesContent(data: Partial<InsertServicesContent>): Promise<ServicesContent>;
+  
+  getServiceItems(): Promise<ServiceItem[]>;
+  createServiceItem(item: InsertServiceItem): Promise<ServiceItem>;
+  updateServiceItem(id: string, item: Partial<InsertServiceItem>): Promise<ServiceItem | undefined>;
+  deleteServiceItem(id: string): Promise<boolean>;
+  
+  getSolutionsContent(): Promise<SolutionsContent | undefined>;
+  updateSolutionsContent(data: Partial<InsertSolutionsContent>): Promise<SolutionsContent>;
+  
+  getSolutionItems(): Promise<SolutionItem[]>;
+  createSolutionItem(item: InsertSolutionItem): Promise<SolutionItem>;
+  updateSolutionItem(id: string, item: Partial<InsertSolutionItem>): Promise<SolutionItem | undefined>;
+  deleteSolutionItem(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -82,6 +110,13 @@ export class MemStorage implements IStorage {
   private visitorStats: VisitorStats;
   private todayDate: string;
   private resetCodes: Map<string, { code: string; expiresAt: number }>;
+  private heroContent: HeroContent | null;
+  private aboutContent: AboutContent | null;
+  private aboutValues: Map<string, AboutValue>;
+  private servicesContent: ServicesContent | null;
+  private serviceItems: Map<string, ServiceItem>;
+  private solutionsContent: SolutionsContent | null;
+  private solutionItems: Map<string, SolutionItem>;
 
   constructor() {
     this.users = new Map();
@@ -95,6 +130,18 @@ export class MemStorage implements IStorage {
     this.oneTimePricingRequests = new Map();
     this.resetCodes = new Map();
     this.todayDate = new Date().toDateString();
+    
+    // Initialize home page content
+    this.heroContent = null;
+    this.aboutContent = null;
+    this.aboutValues = new Map();
+    this.servicesContent = null;
+    this.serviceItems = new Map();
+    this.solutionsContent = null;
+    this.solutionItems = new Map();
+    
+    // Initialize default home page content
+    this.initializeHomePageDefaults();
     
     // Initialize admin user from environment variables
     // Default fallback for development (use strong password in production!)
@@ -727,6 +774,275 @@ export class MemStorage implements IStorage {
     this.visitorStats.totalVisitors = 0;
     this.visitorStats.todayVisitors = 0;
     return this.visitorStats;
+  }
+
+  // Initialize default home page content
+  private initializeHomePageDefaults(): void {
+    // Hero Section defaults
+    this.heroContent = {
+      id: randomUUID(),
+      badgeText: "Pioneering AI Solutions from Nepal",
+      titleLine1: "Transform Your",
+      titleLine2: "Business with AI",
+      subtitle: "We build intelligent AI agents and seamlessly integrate with Google, Microsoft, and enterprise platforms. Share knowledge, empower your team, and grow together.",
+      primaryButtonText: "Get Started",
+      primaryButtonLink: "#contact",
+      secondaryButtonText: "Watch Demo",
+      secondaryButtonLink: "#media",
+      backgroundStyle: "particles",
+      enabled: true,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // About Section defaults
+    this.aboutContent = {
+      id: randomUUID(),
+      badgeText: "About VyomAi",
+      titleHighlight: "Pioneering AI",
+      titleNormal: " in Nepal",
+      description: "VyomAi Pvt Ltd is a startup company dedicated to AI technology research and development. Based in Tokha, Kathmandu, Nepal, we work tirelessly to provide the best AI product solutions and consulting services for organizations seeking to embrace the future.",
+      enabled: true,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Default About Values
+    const defaultAboutValues = [
+      { icon: "Target", title: "Our Mission", description: "To democratize AI technology and make it accessible for businesses of all sizes, from startups to enterprises.", order: 0 },
+      { icon: "Users", title: "Knowledge Sharing", description: "We believe in sharing knowledge. If you learn from us, share it with others for the betterment of everyone.", order: 1 },
+      { icon: "Lightbulb", title: "Innovation", description: "Constantly researching and developing cutting-edge AI solutions that solve real-world problems.", order: 2 },
+      { icon: "Heart", title: "Nepal to Global", description: "Rooted in traditional Nepali values, we bring our expertise to organizations worldwide.", order: 3 },
+    ];
+    defaultAboutValues.forEach(v => {
+      const id = randomUUID();
+      this.aboutValues.set(id, { ...v, id, enabled: true, createdAt: new Date().toISOString() });
+    });
+
+    // Services Section defaults
+    this.servicesContent = {
+      id: randomUUID(),
+      badgeText: "Our Services",
+      titleNormal: "What We ",
+      titleHighlight: "Offer",
+      description: "Comprehensive AI solutions designed to transform how your organization works, from automation to intelligent analytics.",
+      enabled: true,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Default Service Items
+    const defaultServiceItems = [
+      { icon: "Bot", title: "AI Agent Templates", description: "Ready-to-deploy AI agents customized for your business needs. Automate tasks and enhance productivity.", order: 0 },
+      { icon: "Brain", title: "Custom AI Bots", description: "Intelligent chatbots and virtual assistants tailored to your specific requirements and workflows.", order: 1 },
+      { icon: "Cloud", title: "Platform Integration", description: "Seamless integration with Google Workspace, Microsoft 365, and enterprise cloud platforms.", order: 2 },
+      { icon: "BarChart3", title: "AI Analytics", description: "Data-driven insights with intelligent AI that provides expert analytical reports for your business.", order: 3 },
+      { icon: "Cog", title: "AI Consultation", description: "Expert guidance on AI strategy, implementation, and best practices for your organization.", order: 4 },
+      { icon: "Shield", title: "Secure Solutions", description: "Enterprise-grade security ensuring your data and AI systems are protected at all times.", order: 5 },
+    ];
+    defaultServiceItems.forEach(s => {
+      const id = randomUUID();
+      this.serviceItems.set(id, { ...s, id, enabled: true, createdAt: new Date().toISOString() });
+    });
+
+    // Solutions Section defaults
+    this.solutionsContent = {
+      id: randomUUID(),
+      badgeText: "AI Solutions",
+      titleHighlight: "Enterprise",
+      titleNormal: " Integrations",
+      description: "Connect AI capabilities with the platforms you already use. Transform your workflows without disrupting your team.",
+      enabled: true,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Default Solution Items
+    const defaultSolutionItems = [
+      { 
+        icon: "SiGoogle", 
+        title: "Google Workspace Integration", 
+        description: "Connect your AI agents with Gmail, Google Calendar, Drive, and more. Automate workflows and enhance team collaboration.",
+        features: ["Smart email categorization and responses", "Calendar management and scheduling", "Document analysis and summarization", "Team productivity insights"],
+        gradientFrom: "blue-500/20",
+        gradientTo: "green-500/20",
+        order: 0 
+      },
+      { 
+        icon: "Building2", 
+        title: "Microsoft 365 Integration", 
+        description: "Seamlessly integrate with Outlook, Teams, SharePoint, and the entire Microsoft ecosystem for enterprise AI.",
+        features: ["Outlook email automation", "Teams bot integration", "SharePoint document processing", "Power Platform connectivity"],
+        gradientFrom: "orange-500/20",
+        gradientTo: "blue-500/20",
+        order: 1 
+      },
+    ];
+    defaultSolutionItems.forEach(sol => {
+      const id = randomUUID();
+      this.solutionItems.set(id, { ...sol, id, enabled: true, createdAt: new Date().toISOString() });
+    });
+  }
+
+  // Hero Content Methods
+  async getHeroContent(): Promise<HeroContent | undefined> {
+    return this.heroContent || undefined;
+  }
+
+  async updateHeroContent(data: Partial<InsertHeroContent>): Promise<HeroContent> {
+    if (!this.heroContent) {
+      this.heroContent = {
+        id: randomUUID(),
+        badgeText: data.badgeText || "Pioneering AI Solutions from Nepal",
+        titleLine1: data.titleLine1 || "Transform Your",
+        titleLine2: data.titleLine2 || "Business with AI",
+        subtitle: data.subtitle || "",
+        primaryButtonText: data.primaryButtonText || "Get Started",
+        primaryButtonLink: data.primaryButtonLink || "#contact",
+        secondaryButtonText: data.secondaryButtonText || "Watch Demo",
+        secondaryButtonLink: data.secondaryButtonLink || "#media",
+        backgroundStyle: data.backgroundStyle || "particles",
+        enabled: data.enabled ?? true,
+        updatedAt: new Date().toISOString(),
+      };
+    } else {
+      this.heroContent = { ...this.heroContent, ...data, updatedAt: new Date().toISOString() };
+    }
+    return this.heroContent;
+  }
+
+  // About Content Methods
+  async getAboutContent(): Promise<AboutContent | undefined> {
+    return this.aboutContent || undefined;
+  }
+
+  async updateAboutContent(data: Partial<InsertAboutContent>): Promise<AboutContent> {
+    if (!this.aboutContent) {
+      this.aboutContent = {
+        id: randomUUID(),
+        badgeText: data.badgeText || "About VyomAi",
+        titleHighlight: data.titleHighlight || "Pioneering AI",
+        titleNormal: data.titleNormal || " in Nepal",
+        description: data.description || "",
+        enabled: data.enabled ?? true,
+        updatedAt: new Date().toISOString(),
+      };
+    } else {
+      this.aboutContent = { ...this.aboutContent, ...data, updatedAt: new Date().toISOString() };
+    }
+    return this.aboutContent;
+  }
+
+  // About Values Methods
+  async getAboutValues(): Promise<AboutValue[]> {
+    return Array.from(this.aboutValues.values()).sort((a, b) => (a.order || 0) - (b.order || 0));
+  }
+
+  async createAboutValue(value: InsertAboutValue): Promise<AboutValue> {
+    const id = randomUUID();
+    const newValue: AboutValue = { ...value, id, createdAt: new Date().toISOString() };
+    this.aboutValues.set(id, newValue);
+    return newValue;
+  }
+
+  async updateAboutValue(id: string, value: Partial<InsertAboutValue>): Promise<AboutValue | undefined> {
+    const existing = this.aboutValues.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...value };
+    this.aboutValues.set(id, updated);
+    return updated;
+  }
+
+  async deleteAboutValue(id: string): Promise<boolean> {
+    return this.aboutValues.delete(id);
+  }
+
+  // Services Content Methods
+  async getServicesContent(): Promise<ServicesContent | undefined> {
+    return this.servicesContent || undefined;
+  }
+
+  async updateServicesContent(data: Partial<InsertServicesContent>): Promise<ServicesContent> {
+    if (!this.servicesContent) {
+      this.servicesContent = {
+        id: randomUUID(),
+        badgeText: data.badgeText || "Our Services",
+        titleNormal: data.titleNormal || "What We ",
+        titleHighlight: data.titleHighlight || "Offer",
+        description: data.description || "",
+        enabled: data.enabled ?? true,
+        updatedAt: new Date().toISOString(),
+      };
+    } else {
+      this.servicesContent = { ...this.servicesContent, ...data, updatedAt: new Date().toISOString() };
+    }
+    return this.servicesContent;
+  }
+
+  // Service Items Methods
+  async getServiceItems(): Promise<ServiceItem[]> {
+    return Array.from(this.serviceItems.values()).sort((a, b) => (a.order || 0) - (b.order || 0));
+  }
+
+  async createServiceItem(item: InsertServiceItem): Promise<ServiceItem> {
+    const id = randomUUID();
+    const newItem: ServiceItem = { ...item, id, createdAt: new Date().toISOString() };
+    this.serviceItems.set(id, newItem);
+    return newItem;
+  }
+
+  async updateServiceItem(id: string, item: Partial<InsertServiceItem>): Promise<ServiceItem | undefined> {
+    const existing = this.serviceItems.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...item };
+    this.serviceItems.set(id, updated);
+    return updated;
+  }
+
+  async deleteServiceItem(id: string): Promise<boolean> {
+    return this.serviceItems.delete(id);
+  }
+
+  // Solutions Content Methods
+  async getSolutionsContent(): Promise<SolutionsContent | undefined> {
+    return this.solutionsContent || undefined;
+  }
+
+  async updateSolutionsContent(data: Partial<InsertSolutionsContent>): Promise<SolutionsContent> {
+    if (!this.solutionsContent) {
+      this.solutionsContent = {
+        id: randomUUID(),
+        badgeText: data.badgeText || "AI Solutions",
+        titleHighlight: data.titleHighlight || "Enterprise",
+        titleNormal: data.titleNormal || " Integrations",
+        description: data.description || "",
+        enabled: data.enabled ?? true,
+        updatedAt: new Date().toISOString(),
+      };
+    } else {
+      this.solutionsContent = { ...this.solutionsContent, ...data, updatedAt: new Date().toISOString() };
+    }
+    return this.solutionsContent;
+  }
+
+  // Solution Items Methods
+  async getSolutionItems(): Promise<SolutionItem[]> {
+    return Array.from(this.solutionItems.values()).sort((a, b) => (a.order || 0) - (b.order || 0));
+  }
+
+  async createSolutionItem(item: InsertSolutionItem): Promise<SolutionItem> {
+    const id = randomUUID();
+    const newItem: SolutionItem = { ...item, id, createdAt: new Date().toISOString() };
+    this.solutionItems.set(id, newItem);
+    return newItem;
+  }
+
+  async updateSolutionItem(id: string, item: Partial<InsertSolutionItem>): Promise<SolutionItem | undefined> {
+    const existing = this.solutionItems.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...item };
+    this.solutionItems.set(id, updated);
+    return updated;
+  }
+
+  async deleteSolutionItem(id: string): Promise<boolean> {
+    return this.solutionItems.delete(id);
   }
 }
 
