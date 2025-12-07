@@ -4,7 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { Loader2, Lock, Sparkles, Mail, Shield, ArrowRight } from "lucide-react";
+import { Loader2, Lock, Mail, Shield, ArrowRight } from "lucide-react";
+import { AnimatedLogo } from "@/components/animated-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -211,11 +212,8 @@ export default function AdminLoginQR() {
       >
         <Card className="w-full max-w-md glass-card border-0 relative">
           <CardHeader className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Sparkles className="w-8 h-8 text-primary" />
-              <span className="text-2xl font-bold gradient-text font-[Space_Grotesk]">
-                VyomAi Admin
-              </span>
+            <div className="flex items-center justify-center mb-6">
+              <AnimatedLogo variant="login" showText={false} />
             </div>
             <CardTitle className="text-2xl">Secure Login</CardTitle>
             <CardDescription>
