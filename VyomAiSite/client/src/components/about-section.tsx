@@ -1,32 +1,57 @@
-import { Target, Users, Lightbulb, Heart } from "lucide-react";
+import { Target, Users, Lightbulb, Heart, Bot, Brain, Cloud, BarChart3, Cog, Shield, Building2, Mail, Calendar, FileText, Zap, Globe, Lock, Settings, Star, Rocket } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { useQuery } from "@tanstack/react-query";
 
-const values = [
-  {
-    icon: Target,
-    title: "Our Mission",
-    description: "To democratize AI technology and make it accessible for businesses of all sizes, from startups to enterprises.",
-  },
-  {
-    icon: Users,
-    title: "Knowledge Sharing",
-    description: "We believe in sharing knowledge. If you learn from us, share it with others for the betterment of everyone.",
-  },
-  {
-    icon: Lightbulb,
-    title: "Innovation",
-    description: "Constantly researching and developing cutting-edge AI solutions that solve real-world problems.",
-  },
-  {
-    icon: Heart,
-    title: "Nepal to Global",
-    description: "Rooted in traditional Nepali values, we bring our expertise to organizations worldwide.",
-  },
+interface AboutContent {
+  id: string;
+  badgeText: string;
+  titleHighlight: string;
+  titleNormal: string;
+  description: string;
+  enabled: boolean;
+}
+
+interface AboutValue {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  enabled: boolean;
+  order: number;
+}
+
+const iconMap: Record<string, any> = {
+  Target, Users, Lightbulb, Heart, Bot, Brain, Cloud, BarChart3, Cog, Shield, 
+  Building2, Mail, Calendar, FileText, Zap, Globe, Lock, Settings, Star, Rocket
+};
+
+const defaultValues = [
+  { icon: "Target", title: "Our Mission", description: "To democratize AI technology and make it accessible for businesses of all sizes, from startups to enterprises." },
+  { icon: "Users", title: "Knowledge Sharing", description: "We believe in sharing knowledge. If you learn from us, share it with others for the betterment of everyone." },
+  { icon: "Lightbulb", title: "Innovation", description: "Constantly researching and developing cutting-edge AI solutions that solve real-world problems." },
+  { icon: "Heart", title: "Nepal to Global", description: "Rooted in traditional Nepali values, we bring our expertise to organizations worldwide." },
 ];
 
 export function AboutSection() {
   const { ref, isVisible } = useScrollAnimation();
+  
+  const { data: aboutData } = useQuery<{ content: AboutContent; values: AboutValue[] }>({
+    queryKey: ["/api/content/about"],
+  });
+
+  const content = aboutData?.content;
+  const values = aboutData?.values?.filter(v => v.enabled !== false) || [];
+  const displayValues = values.length > 0 ? values : defaultValues;
+
+  if (content?.enabled === false) {
+    return null;
+  }
+
+  const badgeText = content?.badgeText || "About VyomAi";
+  const titleHighlight = content?.titleHighlight || "Pioneering AI";
+  const titleNormal = content?.titleNormal || " in Nepal";
+  const description = content?.description || "VyomAi Pvt Ltd is a startup company dedicated to AI technology research and development. Based in Tokha, Kathmandu, Nepal, we work tirelessly to provide the best AI product solutions and consulting services for organizations seeking to embrace the future.";
 
   return (
     <section
@@ -43,37 +68,38 @@ export function AboutSection() {
         >
           <div className="text-center mb-16">
             <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-              About VyomAi
+              {badgeText}
             </span>
             <h2 className="text-4xl sm:text-5xl font-bold mb-6 font-[Space_Grotesk]">
-              <span className="gradient-text">Pioneering AI</span>
-              <span className="text-foreground"> in Nepal</span>
+              <span className="gradient-text">{titleHighlight}</span>
+              <span className="text-foreground">{titleNormal}</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              VyomAi Pvt Ltd is a startup company dedicated to AI technology research and development. 
-              Based in Tokha, Kathmandu, Nepal, we work tirelessly to provide the best AI product 
-              solutions and consulting services for organizations seeking to embrace the future.
+              {description}
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {values.map((value, index) => (
-              <Card
-                key={index}
-                className="glass-card border-0 hover-elevate transition-all duration-300 group"
-                style={{ transitionDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-6">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <value.icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">{value.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {value.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+            {displayValues.map((value: any, index) => {
+              const IconComponent = iconMap[value.icon] || Target;
+              return (
+                <Card
+                  key={value.id || index}
+                  className="glass-card border-0 hover-elevate transition-all duration-300 group"
+                  style={{ transitionDelay: `${index * 100}ms` }}
+                >
+                  <CardContent className="p-6">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                      <IconComponent className="w-6 h-6 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">{value.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {value.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
 
           <div className="mt-16 glass-card rounded-2xl p-8 lg:p-12">

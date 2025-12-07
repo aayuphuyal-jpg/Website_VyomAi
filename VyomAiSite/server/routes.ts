@@ -1875,6 +1875,281 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
     }
   });
 
+  // ========================================
+  // HOME PAGE CONTENT MANAGEMENT ROUTES
+  // ========================================
+  
+  // Hero Content Routes
+  app.get("/api/content/hero", async (req, res) => {
+    try {
+      const content = await storage.getHeroContent();
+      res.json({ content: content || null });
+    } catch (error) {
+      console.error("Error fetching hero content:", error);
+      res.status(500).json({ error: "Failed to fetch hero content" });
+    }
+  });
+
+  app.put("/api/admin/content/hero", authMiddleware, async (req, res) => {
+    try {
+      const content = await storage.updateHeroContent(req.body);
+      res.json(content);
+    } catch (error) {
+      console.error("Error updating hero content:", error);
+      res.status(500).json({ error: "Failed to update hero content" });
+    }
+  });
+
+  // About Content Routes
+  app.get("/api/content/about", async (req, res) => {
+    try {
+      const content = await storage.getAboutContent();
+      const values = await storage.getAboutValues();
+      res.json({ content, values });
+    } catch (error) {
+      console.error("Error fetching about content:", error);
+      res.status(500).json({ error: "Failed to fetch about content" });
+    }
+  });
+
+  app.put("/api/admin/content/about", authMiddleware, async (req, res) => {
+    try {
+      const content = await storage.updateAboutContent(req.body);
+      res.json(content);
+    } catch (error) {
+      console.error("Error updating about content:", error);
+      res.status(500).json({ error: "Failed to update about content" });
+    }
+  });
+
+  // About Values Routes
+  app.get("/api/content/about/values", async (req, res) => {
+    try {
+      const values = await storage.getAboutValues();
+      res.json(values);
+    } catch (error) {
+      console.error("Error fetching about values:", error);
+      res.status(500).json({ error: "Failed to fetch about values" });
+    }
+  });
+
+  app.post("/api/admin/content/about/values", authMiddleware, async (req, res) => {
+    try {
+      const value = await storage.createAboutValue(req.body);
+      res.json(value);
+    } catch (error) {
+      console.error("Error creating about value:", error);
+      res.status(500).json({ error: "Failed to create about value" });
+    }
+  });
+
+  app.put("/api/admin/content/about/values/:id", authMiddleware, async (req, res) => {
+    try {
+      const value = await storage.updateAboutValue(req.params.id, req.body);
+      if (!value) {
+        return res.status(404).json({ error: "About value not found" });
+      }
+      res.json(value);
+    } catch (error) {
+      console.error("Error updating about value:", error);
+      res.status(500).json({ error: "Failed to update about value" });
+    }
+  });
+
+  app.delete("/api/admin/content/about/values/:id", authMiddleware, async (req, res) => {
+    try {
+      const deleted = await storage.deleteAboutValue(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "About value not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting about value:", error);
+      res.status(500).json({ error: "Failed to delete about value" });
+    }
+  });
+
+  // Services Content Routes
+  app.get("/api/content/services", async (req, res) => {
+    try {
+      const content = await storage.getServicesContent();
+      const items = await storage.getServiceItems();
+      res.json({ content, items });
+    } catch (error) {
+      console.error("Error fetching services content:", error);
+      res.status(500).json({ error: "Failed to fetch services content" });
+    }
+  });
+
+  app.put("/api/admin/content/services", authMiddleware, async (req, res) => {
+    try {
+      const content = await storage.updateServicesContent(req.body);
+      res.json(content);
+    } catch (error) {
+      console.error("Error updating services content:", error);
+      res.status(500).json({ error: "Failed to update services content" });
+    }
+  });
+
+  // Service Items Routes
+  app.get("/api/content/services/items", async (req, res) => {
+    try {
+      const items = await storage.getServiceItems();
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching service items:", error);
+      res.status(500).json({ error: "Failed to fetch service items" });
+    }
+  });
+
+  app.post("/api/admin/content/services/items", authMiddleware, async (req, res) => {
+    try {
+      const item = await storage.createServiceItem(req.body);
+      res.json(item);
+    } catch (error) {
+      console.error("Error creating service item:", error);
+      res.status(500).json({ error: "Failed to create service item" });
+    }
+  });
+
+  app.put("/api/admin/content/services/items/:id", authMiddleware, async (req, res) => {
+    try {
+      const item = await storage.updateServiceItem(req.params.id, req.body);
+      if (!item) {
+        return res.status(404).json({ error: "Service item not found" });
+      }
+      res.json(item);
+    } catch (error) {
+      console.error("Error updating service item:", error);
+      res.status(500).json({ error: "Failed to update service item" });
+    }
+  });
+
+  app.delete("/api/admin/content/services/items/:id", authMiddleware, async (req, res) => {
+    try {
+      const deleted = await storage.deleteServiceItem(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Service item not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting service item:", error);
+      res.status(500).json({ error: "Failed to delete service item" });
+    }
+  });
+
+  // Solutions Content Routes
+  app.get("/api/content/solutions", async (req, res) => {
+    try {
+      const content = await storage.getSolutionsContent();
+      const items = await storage.getSolutionItems();
+      res.json({ content, items });
+    } catch (error) {
+      console.error("Error fetching solutions content:", error);
+      res.status(500).json({ error: "Failed to fetch solutions content" });
+    }
+  });
+
+  app.put("/api/admin/content/solutions", authMiddleware, async (req, res) => {
+    try {
+      const content = await storage.updateSolutionsContent(req.body);
+      res.json(content);
+    } catch (error) {
+      console.error("Error updating solutions content:", error);
+      res.status(500).json({ error: "Failed to update solutions content" });
+    }
+  });
+
+  // Solution Items Routes
+  app.get("/api/content/solutions/items", async (req, res) => {
+    try {
+      const items = await storage.getSolutionItems();
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching solution items:", error);
+      res.status(500).json({ error: "Failed to fetch solution items" });
+    }
+  });
+
+  app.post("/api/admin/content/solutions/items", authMiddleware, async (req, res) => {
+    try {
+      const item = await storage.createSolutionItem(req.body);
+      res.json(item);
+    } catch (error) {
+      console.error("Error creating solution item:", error);
+      res.status(500).json({ error: "Failed to create solution item" });
+    }
+  });
+
+  app.put("/api/admin/content/solutions/items/:id", authMiddleware, async (req, res) => {
+    try {
+      const item = await storage.updateSolutionItem(req.params.id, req.body);
+      if (!item) {
+        return res.status(404).json({ error: "Solution item not found" });
+      }
+      res.json(item);
+    } catch (error) {
+      console.error("Error updating solution item:", error);
+      res.status(500).json({ error: "Failed to update solution item" });
+    }
+  });
+
+  app.delete("/api/admin/content/solutions/items/:id", authMiddleware, async (req, res) => {
+    try {
+      const deleted = await storage.deleteSolutionItem(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Solution item not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting solution item:", error);
+      res.status(500).json({ error: "Failed to delete solution item" });
+    }
+  });
+
+  // Batch update for reordering items
+  app.put("/api/admin/content/about/values/reorder", authMiddleware, async (req, res) => {
+    try {
+      const { items } = req.body; // Array of { id, order }
+      for (const item of items) {
+        await storage.updateAboutValue(item.id, { order: item.order });
+      }
+      const values = await storage.getAboutValues();
+      res.json(values);
+    } catch (error) {
+      console.error("Error reordering about values:", error);
+      res.status(500).json({ error: "Failed to reorder about values" });
+    }
+  });
+
+  app.put("/api/admin/content/services/items/reorder", authMiddleware, async (req, res) => {
+    try {
+      const { items } = req.body; // Array of { id, order }
+      for (const item of items) {
+        await storage.updateServiceItem(item.id, { order: item.order });
+      }
+      const serviceItems = await storage.getServiceItems();
+      res.json(serviceItems);
+    } catch (error) {
+      console.error("Error reordering service items:", error);
+      res.status(500).json({ error: "Failed to reorder service items" });
+    }
+  });
+
+  app.put("/api/admin/content/solutions/items/reorder", authMiddleware, async (req, res) => {
+    try {
+      const { items } = req.body; // Array of { id, order }
+      for (const item of items) {
+        await storage.updateSolutionItem(item.id, { order: item.order });
+      }
+      const solutionItems = await storage.getSolutionItems();
+      res.json(solutionItems);
+    } catch (error) {
+      console.error("Error reordering solution items:", error);
+      res.status(500).json({ error: "Failed to reorder solution items" });
+    }
+  });
+
   // DEVELOPMENT: Test endpoint to seed dummy data for one month
   app.post("/api/test/seed-dummy-data", async (req, res) => {
     try {

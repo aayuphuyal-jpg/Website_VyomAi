@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { LogOut, BarChart3, FileText, Users, DollarSign, BookOpen, MessageSquare, Settings, Sparkles } from "lucide-react";
+import { LogOut, BarChart3, FileText, Users, DollarSign, BookOpen, MessageSquare, Settings, Sparkles, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -19,6 +19,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   const menuItems = [
     { label: "Dashboard", href: "/admin/dashboard", icon: BarChart3, emoji: "📊" },
+    { label: "Home Content", href: "/admin/homepage-content", icon: LayoutDashboard, emoji: "🏠" },
     { label: "Articles & Media", href: "/admin/articles", icon: FileText, emoji: "📝" },
     { label: "Team Members", href: "/admin/team", icon: Users, emoji: "👥" },
     { label: "Pricing Plans", href: "/admin/pricing", icon: DollarSign, emoji: "💰" },

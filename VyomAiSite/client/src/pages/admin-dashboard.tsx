@@ -8,6 +8,7 @@ import { PricingPage } from "@/pages/admin/pricing";
 import { BookingsPage } from "@/pages/admin/bookings";
 import { InquiriesPage } from "@/pages/admin/inquiries";
 import { SettingsPage } from "@/pages/admin/settings";
+import { HomepageContentPage } from "@/pages/admin/homepage-content";
 
 export default function AdminDashboardRouter() {
   const [, setLocation] = useLocation();
@@ -23,6 +24,7 @@ export default function AdminDashboardRouter() {
     <AdminLayout>
       <Switch>
         <Route path="/admin/dashboard" component={AdminDashboard} />
+        <Route path="/admin/homepage-content" component={HomepageContentPage} />
         <Route path="/admin/articles" component={ArticlesPage} />
         <Route path="/admin/team" component={TeamPage} />
         <Route path="/admin/pricing" component={PricingPage} />

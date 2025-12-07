@@ -1,14 +1,58 @@
 import { ArrowDown, Zap, Globe, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+
+interface HeroContent {
+  id: string;
+  badgeText: string;
+  titleLine1: string;
+  titleLine2: string;
+  subtitle: string;
+  primaryButtonText: string;
+  primaryButtonLink: string;
+  secondaryButtonText?: string;
+  secondaryButtonLink?: string;
+  backgroundStyle: string;
+  enabled: boolean;
+}
 
 export function HeroSection() {
-  const scrollToSection = (href: string) => {
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
+  const { data: heroData } = useQuery<{ content: HeroContent | null }>({
+    queryKey: ["/api/content/hero"],
+  });
+
+  const content = heroData?.content;
+
+  const handleNavigation = (href: string) => {
+    if (!href) return;
+    if (href.startsWith('#')) {
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('/')) {
+      window.location.href = href;
+    } else {
+      const element = document.querySelector(`#${href}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
     }
   };
+
+  if (content?.enabled === false) {
+    return null;
+  }
+
+  const badgeText = content?.badgeText || "Pioneering AI Solutions from Nepal";
+  const titleLine1 = content?.titleLine1 || "Transform Your";
+  const titleLine2 = content?.titleLine2 || "Business with AI";
+  const subtitle = content?.subtitle || "We build intelligent AI agents and seamlessly integrate with Google, Microsoft, and enterprise platforms. Share knowledge, empower your team, and grow together.";
+  const primaryButtonText = content?.primaryButtonText || "Get Started";
+  const primaryButtonLink = content?.primaryButtonLink || "#contact";
+  const secondaryButtonText = content?.secondaryButtonText || "Explore Services";
+  const secondaryButtonLink = content?.secondaryButtonLink || "#services";
 
   return (
     <section
@@ -31,7 +75,7 @@ export function HeroSection() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8">
             <Zap className="w-4 h-4 text-accent" />
-            <span className="text-sm font-medium">Pioneering AI Solutions from Nepal</span>
+            <span className="text-sm font-medium">{badgeText}</span>
           </div>
         </motion.div>
 
@@ -41,9 +85,9 @@ export function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
         >
-          <span className="gradient-text">Transform Your</span>
+          <span className="gradient-text">{titleLine1}</span>
           <br />
-          <span className="text-foreground">Business with AI</span>
+          <span className="text-foreground">{titleLine2}</span>
         </motion.h1>
 
         <motion.p
@@ -52,8 +96,7 @@ export function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          We build intelligent AI agents and seamlessly integrate with Google, Microsoft, 
-          and enterprise platforms. Share knowledge, empower your team, and grow together.
+          {subtitle}
         </motion.p>
 
         <motion.div
@@ -65,22 +108,24 @@ export function HeroSection() {
           <Button
             size="lg"
             className="px-8 py-6 text-lg rounded-xl"
-            onClick={() => scrollToSection("#contact")}
+            onClick={() => handleNavigation(primaryButtonLink)}
             data-testid="button-get-started"
           >
             <Bot className="w-5 h-5 mr-2" />
-            Get Started
+            {primaryButtonText}
           </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            className="px-8 py-6 text-lg rounded-xl backdrop-blur-sm"
-            onClick={() => scrollToSection("#services")}
-            data-testid="button-explore-services"
-          >
-            <Globe className="w-5 h-5 mr-2" />
-            Explore Services
-          </Button>
+          {secondaryButtonText && (
+            <Button
+              variant="outline"
+              size="lg"
+              className="px-8 py-6 text-lg rounded-xl backdrop-blur-sm"
+              onClick={() => handleNavigation(secondaryButtonLink)}
+              data-testid="button-explore-services"
+            >
+              <Globe className="w-5 h-5 mr-2" />
+              {secondaryButtonText}
+            </Button>
+          )}
         </motion.div>
 
         <motion.div
@@ -115,13 +160,11 @@ export function HeroSection() {
         transition={{ delay: 1, duration: 0.5 }}
       >
         <button
-          onClick={() => scrollToSection("#about")}
-          className="flex flex-col items-center text-muted-foreground hover:text-foreground transition-colors"
+          onClick={() => handleNavigation("#about")}
+          className="p-3 glass rounded-full hover-elevate animate-bounce"
           aria-label="Scroll to about section"
-          data-testid="button-scroll-down"
         >
-          <span className="text-sm mb-2">Discover More</span>
-          <ArrowDown className="w-5 h-5 animate-bounce" />
+          <ArrowDown className="w-5 h-5 text-primary" />
         </button>
       </motion.div>
     </section>
