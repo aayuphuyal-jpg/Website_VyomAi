@@ -171,12 +171,12 @@ export class MemStorage implements IStorage {
     });
     
     this.settings = {
-      companyName: "VyomAi Pvt Ltd",
+      companyName: "VyomAi Cloud Pvt. Ltd",
       tagline: "Pioneering AI Solutions from Nepal",
       email: "info@vyomai.cloud",
       address: "Tokha, Kathmandu, Nepal",
       phone: "",
-      aboutText: "VyomAi Pvt Ltd is a startup company dedicated to AI technology research and development.",
+      aboutText: "VyomAi Cloud Pvt. Ltd is a startup company dedicated to AI technology research and development.",
       missionText: "To democratize AI technology and make it accessible for businesses of all sizes.",
       paymentEnabled: false,
       comingSoonEnabled: true,

@@ -212,10 +212,10 @@ export default function AdminLoginQR() {
       >
         <Card className="w-full max-w-md glass-card border-0 relative">
           <CardHeader className="text-center">
-            <div className="flex items-center justify-center mb-6">
-              <AnimatedLogo variant="login" showText={false} />
+            <div className="flex items-center justify-center mb-4">
+              <AnimatedLogo variant="login" showText={true} />
             </div>
-            <CardTitle className="text-2xl">Secure Login</CardTitle>
+            <CardTitle className="text-xl">Secure Login</CardTitle>
             <CardDescription>
               Step 1: Enter credentials. Step 2: Choose 2FA method
             </CardDescription>

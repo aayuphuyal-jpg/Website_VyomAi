@@ -1,7 +1,7 @@
 import { Zap, Sparkles } from "lucide-react";
 import { NepaliFlag } from "./nepali-flag";
 import { SocialLinks } from "./social-links";
-import { AnimatedLogo } from "./animated-logo";
+import { AnimatedLogo, MiniLogo } from "./animated-logo";
 import { useQuery } from "@tanstack/react-query";
 import type { SiteSettings } from "@shared/schema";
 
@@ -51,7 +51,7 @@ export function Footer() {
               <NepaliFlag className="w-4 h-6" />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              VyomAi Pvt Ltd is a startup company dedicated to AI technology research 
+              VyomAi Cloud Pvt. Ltd is a startup company dedicated to AI technology research 
               and development, bringing intelligent solutions from Nepal to the world.
             </p>
             <SocialLinks />
@@ -113,9 +113,10 @@ export function Footer() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
-              © {currentYear} VyomAi Pvt Ltd. All rights reserved.
-            </p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MiniLogo className="opacity-80" />
+              <span>© {currentYear} VyomAi Cloud Pvt. Ltd. All rights reserved.</span>
+            </div>
             <p className="text-sm text-muted-foreground">
               Transforming businesses with AI intelligence
             </p>

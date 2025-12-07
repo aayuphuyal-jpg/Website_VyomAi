@@ -131,7 +131,7 @@ export class DatabaseStorage implements IStorage {
         const settingsId = randomUUID();
         await db.insert(siteSettingsTable).values({
           id: settingsId,
-          companyName: "VyomAi Pvt Ltd",
+          companyName: "VyomAi Cloud Pvt. Ltd",
           tagline: "AI Solutions for Business & Personal Growth",
           email: "info@vyomai.cloud",
           address: "Tokha, Kathmandu, Nepal",
@@ -537,7 +537,7 @@ export class DatabaseStorage implements IStorage {
       const id = randomUUID();
       const newSettings = {
         id,
-        companyName: settings.companyName || "VyomAi Pvt Ltd",
+        companyName: settings.companyName || "VyomAi Cloud Pvt. Ltd",
         tagline: settings.tagline || "AI Solutions Platform",
         email: settings.email || "info@vyomai.cloud",
         address: settings.address || "Tokha, Kathmandu, Nepal",

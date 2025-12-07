@@ -524,7 +524,7 @@ export const aboutContentSchema = z.object({
   badgeText: z.string().default("About VyomAi"),
   titleHighlight: z.string().default("Pioneering AI"),
   titleNormal: z.string().default(" in Nepal"),
-  description: z.string().default("VyomAi Pvt Ltd is a startup company dedicated to AI technology research and development. Based in Tokha, Kathmandu, Nepal, we work tirelessly to provide the best AI product solutions and consulting services for organizations seeking to embrace the future."),
+  description: z.string().default("VyomAi Cloud Pvt. Ltd is a startup company dedicated to AI technology research and development. Based in Tokha, Kathmandu, Nepal, we work tirelessly to provide the best AI product solutions and consulting services for organizations seeking to embrace the future."),
   enabled: z.boolean().default(true),
   updatedAt: z.string().optional(),
 });

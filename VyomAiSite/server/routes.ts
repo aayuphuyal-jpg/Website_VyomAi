@@ -341,10 +341,10 @@ export async function registerRoutes(
         });
       }
 
-      const systemMessage = `You are VyomAi's helpful AI assistant. VyomAi Pvt Ltd is an AI technology company based in Tokha, Kathmandu, Nepal.
+      const systemMessage = `You are VyomAi's helpful AI assistant. VyomAi Cloud Pvt. Ltd is an AI technology company based in Tokha, Kathmandu, Nepal.
 
 Key information about VyomAi:
-- Company: VyomAi Pvt Ltd
+- Company: VyomAi Cloud Pvt. Ltd
 - Location: Tokha, Kathmandu, Nepal
 - Email: info@vyomai.cloud
 - Services: AI agent templates, custom AI bots, Google Workspace integration, Microsoft 365 integration, AI analytics, AI consultation

@@ -168,10 +168,10 @@ export default function AdminLogin() {
       
       <Card className="w-full max-w-md glass-card border-0 relative">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-6">
-            <AnimatedLogo variant="login" showText={false} />
+          <div className="flex items-center justify-center mb-4">
+            <AnimatedLogo variant="login" showText={true} />
           </div>
-          <CardTitle className="text-2xl">Admin Login</CardTitle>
+          <CardTitle className="text-xl">Admin Login</CardTitle>
           <CardDescription>
             Access the dashboard to manage your website content
           </CardDescription>

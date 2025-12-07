@@ -248,7 +248,7 @@ export function ContactSection() {
 
               <div className="glass-card rounded-2xl p-8 bg-gradient-to-br from-primary/10 to-accent/10">
                 <h3 className="text-xl font-bold mb-2 font-[Space_Grotesk]">
-                  VyomAi Pvt Ltd
+                  VyomAi Cloud Pvt. Ltd
                 </h3>
                 <p className="text-muted-foreground text-sm">
                   Pioneering AI technology from the heart of the Himalayas. 
