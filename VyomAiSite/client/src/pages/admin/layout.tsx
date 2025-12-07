@@ -1,8 +1,9 @@
 import { useLocation, Link } from "wouter";
-import { LogOut, BarChart3, FileText, Users, DollarSign, BookOpen, MessageSquare, Settings, Sparkles, LayoutDashboard } from "lucide-react";
+import { LogOut, BarChart3, FileText, Users, DollarSign, BookOpen, MessageSquare, Settings, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AnimatedLogo } from "@/components/animated-logo";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -41,9 +42,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <Sidebar className="border-r">
           <SidebarContent>
             <SidebarGroup>
-              <SidebarGroupLabel className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                VyomAi Admin
+              <SidebarGroupLabel className="flex items-center gap-2 py-3">
+                <AnimatedLogo variant="admin" showText={false} className="h-6" />
+                <span className="gradient-text font-semibold">Admin</span>
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>

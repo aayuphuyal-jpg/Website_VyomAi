@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
-import { Menu, X, Sun, Moon, Sparkles, LogIn, Mail } from "lucide-react";
+import { Menu, X, Sun, Moon, LogIn, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NepaliFlag } from "./nepali-flag";
-import { NepalLogo } from "./nepal-logo";
+import { AnimatedLogo } from "./animated-logo";
 import { VisitorCounter } from "./visitor-counter";
 import { SocialLinks } from "./social-links";
 import { useTheme } from "./theme-provider";
@@ -49,15 +49,9 @@ export function Header() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Sparkles className="w-8 h-8 text-primary animate-pulse-slow" />
-              <div className="absolute inset-0 w-8 h-8 bg-primary/30 blur-xl rounded-full" />
-            </div>
-            <span className="text-xl font-bold gradient-text font-[Space_Grotesk]">
-              VyomAi
-            </span>
-            <NepaliFlag className="w-5 h-7 ml-1 animate-windy" />
+          <div className="flex items-center gap-2">
+            <AnimatedLogo variant="header" showText={false} />
+            <NepaliFlag className="w-5 h-7 animate-windy" />
           </div>
 
           <nav className="hidden lg:flex items-center gap-1">

@@ -1,6 +1,7 @@
-import { Sparkles, Zap } from "lucide-react";
+import { Zap, Sparkles } from "lucide-react";
 import { NepaliFlag } from "./nepali-flag";
 import { SocialLinks } from "./social-links";
+import { AnimatedLogo } from "./animated-logo";
 import { useQuery } from "@tanstack/react-query";
 import type { SiteSettings } from "@shared/schema";
 
@@ -46,9 +47,7 @@ export function Footer() {
         <div className="grid md:grid-cols-3 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <span className="text-xl font-bold gradient-text font-[Space_Grotesk]">
-                VyomAi
-              </span>
+              <AnimatedLogo variant="footer" showText={false} />
               <NepaliFlag className="w-4 h-6" />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
