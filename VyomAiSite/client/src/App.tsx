@@ -24,6 +24,8 @@ function Router() {
       <Route path="/admin/bookings" component={AdminDashboard} />
       <Route path="/admin/inquiries" component={AdminDashboard} />
       <Route path="/admin/settings" component={AdminDashboard} />
+      <Route path="/admin/social-media" component={AdminDashboard} />
+      <Route path="/admin/email-settings" component={AdminDashboard} />
       <Route path="/email/login" component={EmailLogin} />
       <Route path="/email/inbox" component={EmailInbox} />
       <Route component={NotFound} />

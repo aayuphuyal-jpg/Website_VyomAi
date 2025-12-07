@@ -578,6 +578,51 @@ Always maintain a balance between being professional and approachable. Reference
     }
   });
 
+  // Email status endpoint
+  app.get("/api/admin/email-status", authMiddleware, async (req, res) => {
+    try {
+      const { getUncachableGmailClient } = await import("./gmail-client");
+      const gmail = await getUncachableGmailClient();
+      const profile = await gmail.users.getProfile({ userId: "me" });
+      res.json({ connected: true, email: profile.data.emailAddress });
+    } catch (error) {
+      res.json({ connected: false });
+    }
+  });
+
+  // Test email endpoint
+  app.post("/api/admin/test-email", authMiddleware, async (req, res) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "Email address required" });
+      }
+      
+      const result = await sendEmail({
+        to: email,
+        subject: "VyomAi Test Email",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #7c3aed;">VyomAi Email Test</h2>
+            <p>This is a test email from your VyomAi Admin Panel.</p>
+            <p>If you received this, your email integration is working correctly!</p>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+            <p style="color: #6b7280; font-size: 12px;">VyomAi Cloud Pvt. Ltd - The Infinity Sky</p>
+          </div>
+        `,
+      });
+      
+      if (result) {
+        res.json({ success: true });
+      } else {
+        res.status(500).json({ error: "Failed to send email" });
+      }
+    } catch (error) {
+      console.error("Test email error:", error);
+      res.status(500).json({ error: "Failed to send test email" });
+    }
+  });
+
   // Team routes
   app.get("/api/team", async (req, res) => {
     try {
