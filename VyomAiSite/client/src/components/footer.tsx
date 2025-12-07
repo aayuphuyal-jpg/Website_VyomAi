@@ -112,7 +112,13 @@ export function Footer() {
               <NepaliFlag className="w-3 h-4 animate-windy" /> Crafted in Kathmandu • Deployed Globally
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          
+          {/* Brand Showcase Section */}
+          <div className="py-8 border-t border-border/50 flex flex-col items-center">
+            <AnimatedLogo variant="brandShowcase" showText={true} />
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-border/30">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <MiniLogo className="opacity-80" />
               <span>© {currentYear} VyomAi Cloud Pvt. Ltd. All rights reserved.</span>

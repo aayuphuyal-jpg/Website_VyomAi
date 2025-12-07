@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface AnimatedLogoProps {
-  variant?: "header" | "login" | "footer" | "admin" | "minimal" | "copyright";
+  variant?: "header" | "login" | "footer" | "admin" | "minimal" | "copyright" | "brandShowcase";
   className?: string;
   showText?: boolean;
 }
@@ -13,12 +13,13 @@ export function AnimatedLogo({
   showText = true 
 }: AnimatedLogoProps) {
   const sizeConfig = {
-    header: { fontSize: "text-xl", iconSize: 32, gap: "gap-2", flexDir: "flex-row" as const },
-    login: { fontSize: "text-5xl", iconSize: 80, gap: "gap-4", flexDir: "flex-col" as const },
-    footer: { fontSize: "text-lg", iconSize: 28, gap: "gap-2", flexDir: "flex-row" as const },
-    admin: { fontSize: "text-base", iconSize: 24, gap: "gap-2", flexDir: "flex-row" as const },
-    minimal: { fontSize: "text-sm", iconSize: 18, gap: "gap-1", flexDir: "flex-row" as const },
-    copyright: { fontSize: "text-sm", iconSize: 16, gap: "gap-1", flexDir: "flex-row" as const },
+    header: { fontSize: "text-2xl", iconSize: 38, gap: "gap-2", flexDir: "flex-row" as const },
+    login: { fontSize: "text-5xl", iconSize: 90, gap: "gap-4", flexDir: "flex-col" as const },
+    footer: { fontSize: "text-xl", iconSize: 34, gap: "gap-2", flexDir: "flex-row" as const },
+    admin: { fontSize: "text-lg", iconSize: 28, gap: "gap-2", flexDir: "flex-row" as const },
+    minimal: { fontSize: "text-base", iconSize: 22, gap: "gap-1", flexDir: "flex-row" as const },
+    copyright: { fontSize: "text-sm", iconSize: 20, gap: "gap-1", flexDir: "flex-row" as const },
+    brandShowcase: { fontSize: "text-4xl", iconSize: 70, gap: "gap-4", flexDir: "flex-col" as const },
   };
 
   const config = sizeConfig[variant];
@@ -39,7 +40,7 @@ export function AnimatedLogo({
       <LogoIcon size={config.iconSize} variant={variant} />
       
       {showText && (
-        <div className={cn("flex flex-col", variant === "login" && "items-center mt-2")}>
+        <div className={cn("flex flex-col", (variant === "login" || variant === "brandShowcase") && "items-center mt-2")}>
           <AnimatedLogoText variant={variant} fontSize={config.fontSize} />
           {variant === "login" && (
             <motion.span 
@@ -51,6 +52,24 @@ export function AnimatedLogo({
               The Infinity Sky
             </motion.span>
           )}
+          {variant === "brandShowcase" && (
+            <motion.div
+              className="flex flex-col items-center mt-3 max-w-lg text-center"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
+              <span className="text-lg font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-1">
+                VyomAi Cloud Pvt. Ltd
+              </span>
+              <span className="text-xs text-muted-foreground/70 tracking-[0.2em] font-light uppercase mb-3">
+                The Infinity Sky
+              </span>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Pioneering AI technology from the heart of the Himalayas. Bringing intelligent solutions to businesses worldwide.
+              </p>
+            </motion.div>
+          )}
         </div>
       )}
     </motion.div>
@@ -58,12 +77,12 @@ export function AnimatedLogo({
 }
 
 function LogoIcon({ size, variant }: { size: number; variant: string }) {
-  const isLarge = variant === "login";
+  const isLarge = variant === "login" || variant === "brandShowcase";
   
   return (
     <motion.div 
       className="relative"
-      whileHover={{ scale: 1.05, rotate: 3 }}
+      whileHover={{ scale: 1.05 }}
       transition={{ type: "spring", stiffness: 400, damping: 10 }}
     >
       {isLarge && (
@@ -84,12 +103,14 @@ function LogoIcon({ size, variant }: { size: number; variant: string }) {
         />
       )}
       
-      <svg 
+      <motion.svg 
         width={size} 
         height={size} 
         viewBox="0 0 100 100" 
         fill="none"
         className="relative z-10"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
       >
         <defs>
           <linearGradient id={`gradient-${variant}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -99,16 +120,13 @@ function LogoIcon({ size, variant }: { size: number; variant: string }) {
           </linearGradient>
         </defs>
         
-        <motion.circle
+        <circle
           cx="50"
           cy="50"
           r="46"
           stroke={`url(#gradient-${variant})`}
           strokeWidth="3"
           fill="none"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
         />
         
         <motion.circle
@@ -119,8 +137,8 @@ function LogoIcon({ size, variant }: { size: number; variant: string }) {
           strokeWidth="1.5"
           strokeDasharray="6 3"
           fill="none"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          animate={{ rotate: -360 }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
           style={{ originX: "50%", originY: "50%", transformOrigin: "center" }}
         />
         
@@ -131,9 +149,9 @@ function LogoIcon({ size, variant }: { size: number; variant: string }) {
           strokeLinecap="round"
           strokeLinejoin="round"
           fill="none"
-          initial={{ pathLength: 0 }}
-          animate={{ pathLength: 1 }}
-          transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+          animate={{ rotate: -360 }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          style={{ originX: "50%", originY: "50%", transformOrigin: "center" }}
         />
         
         {isLarge && (
@@ -143,36 +161,40 @@ function LogoIcon({ size, variant }: { size: number; variant: string }) {
               cy="25"
               r="3"
               fill="hsl(262, 83%, 58%)"
-              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5], rotate: -360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              style={{ originX: "50px", originY: "50px", transformOrigin: "50px 50px" }}
             />
             <motion.circle
               cx="85"
               cy="30"
               r="2.5"
               fill="hsl(24, 95%, 53%)"
-              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5], rotate: -360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+              style={{ originX: "50px", originY: "50px", transformOrigin: "50px 50px" }}
             />
             <motion.circle
               cx="80"
               cy="75"
               r="2"
               fill="hsl(280, 80%, 55%)"
-              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5], rotate: -360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              style={{ originX: "50px", originY: "50px", transformOrigin: "50px 50px" }}
             />
             <motion.circle
               cx="20"
               cy="70"
               r="2"
               fill="hsl(262, 83%, 58%)"
-              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5], rotate: -360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+              style={{ originX: "50px", originY: "50px", transformOrigin: "50px 50px" }}
             />
           </>
         )}
-      </svg>
+      </motion.svg>
     </motion.div>
   );
 }
@@ -286,7 +308,14 @@ export function MiniLogo({ className }: { className?: string }) {
       whileHover={{ scale: 1.03 }}
       transition={{ type: "spring", stiffness: 400, damping: 15 }}
     >
-      <svg width="18" height="18" viewBox="0 0 100 100" fill="none">
+      <motion.svg 
+        width="22" 
+        height="22" 
+        viewBox="0 0 100 100" 
+        fill="none"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+      >
         <defs>
           <linearGradient id="miniGradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="hsl(262, 83%, 58%)" />
@@ -294,8 +323,18 @@ export function MiniLogo({ className }: { className?: string }) {
           </linearGradient>
         </defs>
         <circle cx="50" cy="50" r="44" stroke="url(#miniGradient)" strokeWidth="4" fill="none" />
-        <path d="M35 65 L50 35 L65 65" stroke="url(#miniGradient)" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      </svg>
+        <motion.path 
+          d="M35 65 L50 35 L65 65" 
+          stroke="url(#miniGradient)" 
+          strokeWidth="6" 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          fill="none" 
+          animate={{ rotate: -360 }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          style={{ originX: "50%", originY: "50%", transformOrigin: "center" }}
+        />
+      </motion.svg>
       <span className="font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent font-[Space_Grotesk]">
         VyomAi
       </span>
