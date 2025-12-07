@@ -29,8 +29,8 @@ export function Footer() {
     }
   };
 
-  // Check if footer is published
-  if (!settings?.publishFooter) {
+  // Check if footer is published (default to showing if not set)
+  if (settings?.publishFooter === false) {
     return null;
   }
 
