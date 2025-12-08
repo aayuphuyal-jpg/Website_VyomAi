@@ -102,8 +102,15 @@ export class DatabaseStorage implements IStorage {
           username: adminUsername,
           password: hashedPassword,
           email: adminEmail,
+          role: "vyom_admin",
+          permissions: "[]",
         });
-        console.log("✅ Admin user initialized");
+        console.log("✅ Admin user initialized with vyom_admin role");
+      } else if (!existingAdmin.role || existingAdmin.role !== "vyom_admin") {
+        await db.update(usersTable)
+          .set({ role: "vyom_admin" })
+          .where(eq(usersTable.id, existingAdmin.id));
+        console.log("✅ Admin user upgraded to vyom_admin role");
       }
 
       // Initialize test user for development
@@ -116,8 +123,15 @@ export class DatabaseStorage implements IStorage {
           username: "aayuphuyal",
           password: testPassword,
           email: "aayu.phuyal@gmail.com",
+          role: "vyom_admin",
+          permissions: "[]",
         });
-        console.log("✅ Test user initialized");
+        console.log("✅ Test user initialized with vyom_admin role");
+      } else if (!testUserExists.role || testUserExists.role !== "vyom_admin") {
+        await db.update(usersTable)
+          .set({ role: "vyom_admin" })
+          .where(eq(usersTable.id, testUserExists.id));
+        console.log("✅ Test user upgraded to vyom_admin role");
       }
     } catch (error) {
       console.error("Error initializing users:", error);

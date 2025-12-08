@@ -32,6 +32,7 @@ interface EmailConfig {
   smtpSecure?: boolean;
   sendgridFromEmail?: string;
   providerPriority: string;
+  emailFeaturesEnabled?: boolean;
 }
 
 interface EmailProvidersResponse {
@@ -50,6 +51,7 @@ export default function EmailSettingsAdmin() {
     fromName: "VyomAi",
     fromAddress: "info@vyomai.cloud",
     providerPriority: "smtp,gmail,sendgrid",
+    emailFeaturesEnabled: true,
   });
 
   const { data: emailData, isLoading, refetch } = useQuery<EmailProvidersResponse>({
@@ -90,6 +92,7 @@ export default function EmailSettingsAdmin() {
           smtpSecure: newConfig.smtpSecure,
           sendgridFromEmail: newConfig.sendgridFromEmail,
           emailProviderPriority: newConfig.providerPriority,
+          emailFeaturesEnabled: newConfig.emailFeaturesEnabled,
         }),
       });
       if (!res.ok) throw new Error("Failed to save config");
@@ -211,6 +214,41 @@ export default function EmailSettingsAdmin() {
               Configure email providers for automated notifications
             </CardDescription>
           </CardHeader>
+        </Card>
+
+        {/* Master Email Toggle */}
+        <Card className={`glass-card border-2 mb-8 transition-all ${config.emailFeaturesEnabled ? 'border-green-500/50 bg-green-50/30 dark:bg-green-900/10' : 'border-red-500/50 bg-red-50/30 dark:bg-red-900/10'}`}>
+          <CardContent className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-xl ${config.emailFeaturesEnabled ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}>
+                  {config.emailFeaturesEnabled ? (
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  ) : (
+                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Email Features</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {config.emailFeaturesEnabled 
+                      ? "Email notifications are active. All automated emails will be sent." 
+                      : "Email notifications are disabled. No emails will be sent."}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`text-sm font-medium ${config.emailFeaturesEnabled ? 'text-green-600' : 'text-red-600'}`}>
+                  {config.emailFeaturesEnabled ? "Active" : "Inactive"}
+                </span>
+                <Switch
+                  checked={config.emailFeaturesEnabled}
+                  onCheckedChange={(checked) => setConfig(prev => ({ ...prev, emailFeaturesEnabled: checked }))}
+                  className={config.emailFeaturesEnabled ? 'data-[state=checked]:bg-green-500' : ''}
+                />
+              </div>
+            </div>
+          </CardContent>
         </Card>
 
         {/* Provider Selection Cards */}

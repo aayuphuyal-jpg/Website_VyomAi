@@ -618,6 +618,7 @@ Always maintain a balance between being professional and approachable. Reference
           smtpSecure: settings.smtpSecure || false,
           sendgridFromEmail: settings.sendgridFromEmail,
           providerPriority: settings.emailProviderPriority || "smtp,gmail,sendgrid",
+          emailFeaturesEnabled: settings.emailFeaturesEnabled !== false,
         },
       });
     } catch (error) {
@@ -640,6 +641,7 @@ Always maintain a balance between being professional and approachable. Reference
         smtpSecure,
         sendgridFromEmail,
         emailProviderPriority,
+        emailFeaturesEnabled,
       } = req.body;
 
       const updatedSettings = await storage.updateSettings({
@@ -653,6 +655,7 @@ Always maintain a balance between being professional and approachable. Reference
         smtpSecure,
         sendgridFromEmail,
         emailProviderPriority,
+        emailFeaturesEnabled,
       } as any);
 
       clearEmailConfigCache();

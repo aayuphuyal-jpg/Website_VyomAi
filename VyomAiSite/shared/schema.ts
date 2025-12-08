@@ -510,6 +510,7 @@ export const siteSettingsTable = pgTable("site_settings", {
   welcomePopupAnimationStyle: varchar("welcome_popup_animation_style").default("fade"),
   welcomePopupDismissable: boolean("welcome_popup_dismissable").default(true),
   // Email Provider Configuration
+  emailFeaturesEnabled: boolean("email_features_enabled").default(true),
   emailProvider: varchar("email_provider").default("smtp"), // 'gmail', 'smtp', 'sendgrid'
   emailFromName: varchar("email_from_name").default("VyomAi"),
   emailFromAddress: varchar("email_from_address").default("info@vyomai.cloud"),
