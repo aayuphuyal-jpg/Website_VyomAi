@@ -135,19 +135,31 @@ Preferred communication style: Simple, everyday language.
   - Intended for online payment processing
   - Backend configuration prepared via site settings
 
-### Email Configuration
-- **Email Provider**: Gmail API (native Google Workspace integration via Replit)
-- **Status**: ✅ ACTIVE - Connected and functional
-- **Primary Sender**: Gmail account connected via Replit integrations
+### Email Configuration (Multi-Provider)
+- **Architecture**: Platform-agnostic email system with priority-based provider fallback
+- **Supported Providers**:
+  1. **SMTP** (Primary for production) - Works with Hostinger, Gmail SMTP, or any SMTP server
+  2. **Gmail Connector** (Replit-only) - OAuth2 via Replit's Gmail integration
+  3. **SendGrid** - Transactional email API service
+- **Provider Priority**: Configurable fallback chain (default: smtp → gmail → sendgrid)
 - **Admin Inbox**: info@vyomai.cloud (contact forms, booking requests)
-- **Implementation**: googleapis v148.0.0 with OAuth2 authentication
-- **Not Using**: Microsoft Office 365 (per user preference)
+- **Configuration**: Admin panel UI at /admin/email-settings
+
+### Email Environment Variables
+- `EMAIL_SMTP_PASSWORD` - SMTP server password (required for SMTP provider)
+- `EMAIL_SENDGRID_API_KEY` - SendGrid API key (required for SendGrid provider)
+- Database stores non-sensitive config: host, port, username, from address
 
 ### Email Use Cases
 - **Password Reset**: Sends 6-digit verification codes to admin email
 - **Contact Forms**: Send to info@vyomai.cloud + user confirmation
 - **Booking Requests**: Send to info@vyomai.cloud + booking confirmation
-- **System Notifications**: From Gmail account (for admin features)
+- **System Notifications**: From configured email provider
+
+### Deployment Notes
+- For Hostinger VPS: Use SMTP provider with Hostinger email credentials
+- For Replit: Can use Gmail Connector or SMTP
+- For any platform: SendGrid works universally with API key
 
 ### Password Reset System
 - **Status**: ✅ FULLY FUNCTIONAL
