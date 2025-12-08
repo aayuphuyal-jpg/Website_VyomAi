@@ -3,12 +3,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLocation } from "wouter";
+import { AnimatedLogo } from "@/components/animated-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowLeft } from "lucide-react";
 
 const emailLoginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -73,43 +74,48 @@ export default function EmailLogin() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-background to-background/80 dark:from-background dark:to-background/80 flex items-center justify-center p-4">
-      {/* Background effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -mr-48 -mt-48" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -ml-48 -mb-48" />
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Enhanced Playful Background - Same as Admin Login */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-[hsl(262_83%_58%/0.05)] to-[hsl(24_95%_53%/0.08)] animate-pulse" style={{ animationDuration: "8s" }} />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-[hsl(262_83%_58%/0.15)] rounded-full blur-3xl animate-float" style={{ animationDuration: "15s" }} />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-[hsl(24_95%_53%/0.12)] rounded-full blur-3xl animate-float" style={{ animationDuration: "20s", animationDelay: "2s" }} />
+        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-[hsl(200_80%_50%/0.1)] rounded-full blur-3xl animate-float" style={{ animationDuration: "18s", animationDelay: "4s" }} />
       </div>
+      <div className="absolute inset-0 particle-bg opacity-20" />
+      <div className="absolute inset-0 mandala-pattern opacity-8" />
 
-      <div className="relative z-10 w-full max-w-md">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-lg bg-gradient-to-br from-primary to-primary/70 dark:from-primary/80 dark:to-primary">
-            <Mail className="w-8 h-8 text-white" />
+      <Card className="w-full max-w-md glass-card border-0 relative">
+        <CardHeader className="text-center">
+          <div className="flex items-center justify-center mb-4">
+            <AnimatedLogo variant="login" showText={true} />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">Email Access</h1>
-          <p className="text-muted-foreground">Access your VyomAi business email</p>
-        </div>
-
-        {/* Login Card */}
-        <Card className="p-8 backdrop-blur-sm bg-card/50 border border-border/50">
+          <CardTitle className="text-xl flex items-center justify-center gap-2">
+            <Mail className="w-5 h-5 text-primary" />
+            Email Access
+          </CardTitle>
+          <CardDescription>
+            Access your VyomAi business email
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Email Field */}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-semibold">Email Address</FormLabel>
+                    <FormLabel>Email Address</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground ${isLoading ? "animate-email-buffer" : ""}`} />
+                        <Mail className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground ${isLoading ? "animate-email-buffer" : ""}`} />
                         <Input
                           {...field}
                           type="email"
                           placeholder="shekhar@vyomai.cloud"
                           disabled={isLoading}
-                          className="pl-10 bg-background/50 border-border/50 focus-visible:border-primary focus-visible:ring-primary/20"
+                          className="pl-10"
                           data-testid="input-email"
                         />
                       </div>
@@ -119,22 +125,21 @@ export default function EmailLogin() {
                 )}
               />
 
-              {/* Password Field */}
               <FormField
                 control={form.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-semibold">Password</FormLabel>
+                    <FormLabel>Password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <Input
                           {...field}
                           type={showPassword ? "text" : "password"}
                           placeholder="Enter your password"
                           disabled={isLoading}
-                          className="pl-10 pr-10 bg-background/50 border-border/50 focus-visible:border-primary focus-visible:ring-primary/20"
+                          className="pl-10 pr-10"
                           data-testid="input-password"
                           onChange={(e) => {
                             field.onChange(e);
@@ -148,9 +153,9 @@ export default function EmailLogin() {
                           data-testid="button-toggle-password"
                         >
                           {showPassword ? (
-                            <EyeOff className="w-5 h-5" />
+                            <EyeOff className="w-4 h-4" />
                           ) : (
-                            <Eye className="w-5 h-5" />
+                            <Eye className="w-4 h-4" />
                           )}
                         </button>
                       </div>
@@ -160,38 +165,47 @@ export default function EmailLogin() {
                 )}
               />
 
-              {/* Submit Button */}
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-semibold h-10"
+                className="w-full hover-elevate"
                 data-testid="button-login-email"
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? (
+                  <>
+                    <Mail className="w-4 h-4 mr-2 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 mr-2" />
+                    Sign In
+                  </>
+                )}
               </Button>
             </form>
           </Form>
 
-          {/* Info */}
           <div className="mt-6 p-4 bg-primary/5 dark:bg-primary/10 rounded-lg border border-primary/20">
             <p className="text-sm text-muted-foreground">
               <span className="font-semibold text-foreground">Tip:</span> Use your full VyomAi email address (e.g., shekhar@vyomai.cloud) and the password you set in Hostinger.
             </p>
           </div>
-        </Card>
 
-        {/* Footer */}
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          <button
-            type="button"
-            onClick={() => setLocation("/")}
-            className="text-primary hover:underline font-medium transition-colors"
-            data-testid="link-back-home"
-          >
-            Back to Home
-          </button>
-        </p>
-      </div>
+          <div className="mt-4">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setLocation("/")}
+              className="w-full text-sm hover-elevate"
+              data-testid="link-back-home"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Home
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
