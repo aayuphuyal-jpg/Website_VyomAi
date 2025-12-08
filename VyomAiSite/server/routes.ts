@@ -715,6 +715,48 @@ Always maintain a balance between being professional and approachable. Reference
     }
   });
 
+  // Generic send email endpoint for admin
+  app.post("/api/admin/send-email", authMiddleware, async (req, res) => {
+    try {
+      const { sendEmailWithResult } = await import("./email-service");
+      const { to, subject, message, type } = req.body;
+      
+      if (!to || !subject || !message) {
+        return res.status(400).json({ error: "To, subject, and message are required" });
+      }
+      
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%); padding: 20px; border-radius: 8px 8px 0 0;">
+            <h2 style="color: white; margin: 0;">VyomAi</h2>
+          </div>
+          <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px;">
+            <div style="white-space: pre-wrap; line-height: 1.6; color: #374151;">${message}</div>
+          </div>
+          <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+            <p>VyomAi Cloud Pvt. Ltd - The Infinity Sky</p>
+            <p>Nepal's Leading AI Solutions Provider</p>
+          </div>
+        </div>
+      `;
+      
+      const result = await sendEmailWithResult({
+        to,
+        subject,
+        html: emailHtml,
+      });
+      
+      if (result.success) {
+        res.json({ success: true, provider: result.provider });
+      } else {
+        res.status(500).json({ error: result.error || "Failed to send email" });
+      }
+    } catch (error: any) {
+      console.error("Send email error:", error);
+      res.status(500).json({ error: error.message || "Failed to send email" });
+    }
+  });
+
   // Team routes
   app.get("/api/team", async (req, res) => {
     try {
