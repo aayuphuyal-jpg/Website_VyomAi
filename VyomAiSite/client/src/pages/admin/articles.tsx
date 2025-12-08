@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Trash2, Edit, Save, Loader2, Calendar, Clock, FileText, Video, Zap, Eye, EyeOff, Search, Filter, Download, Upload, FileJson, User } from "lucide-react";
+import { Plus, Trash2, Edit, Save, Loader2, Calendar, Clock, FileText, Video, Zap, Eye, EyeOff, Search, Filter, Download, Upload, FileJson, User, Link2 } from "lucide-react";
 import html2pdf from "html2pdf.js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,7 @@ export function ArticlesPage() {
   const [mediaPreview, setMediaPreview] = useState<string>("");
   const [isDraggingThumbnail, setIsDraggingThumbnail] = useState(false);
   const [isDraggingMedia, setIsDraggingMedia] = useState(false);
+  const [thumbnailMode, setThumbnailMode] = useState<"url" | "upload">("upload");
 
   const { data: articles = [], isLoading } = useQuery<Article[]>({
     queryKey: ["/api/articles"],
@@ -600,44 +601,102 @@ export function ArticlesPage() {
                   )}
                 />
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <FormLabel>Featured Image / Thumbnail</FormLabel>
-                  <div
-                    onDragOver={(e) => handleDragOver(e, setIsDraggingThumbnail)}
-                    onDragLeave={(e) => handleDragLeave(e, setIsDraggingThumbnail)}
-                    onDrop={handleDropThumbnail}
-                    className={`relative border-2 border-dashed rounded-lg p-6 transition-all duration-200 cursor-pointer ${
-                      isDraggingThumbnail
-                        ? "border-primary bg-primary/5 scale-105"
-                        : "border-muted-foreground/30 bg-muted/30 hover:border-primary/50 hover:bg-primary/2"
-                    }`}
-                    data-testid="dropzone-featured-image"
-                  >
-                    <div className="flex flex-col items-center justify-center gap-3">
-                      <Upload className={`w-8 h-8 transition-all ${isDraggingThumbnail ? "text-primary scale-110" : "text-muted-foreground"}`} />
-                      <div className="text-center">
-                        <p className="font-medium text-sm">Drag and drop your image here</p>
-                        <p className="text-xs text-muted-foreground mt-1">or click to browse</p>
-                      </div>
-                    </div>
-                    <label className="absolute inset-0 cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          if (e.target.files?.[0]) {
-                            handleFileUpload(e.target.files[0], setThumbnailPreview, "thumbnailUrl");
-                            toast({ title: "Image uploaded ✓", description: "Featured image has been added" });
-                          }
-                        }}
-                        className="hidden"
-                        data-testid="input-upload-featured-image"
-                      />
-                    </label>
+                  
+                  <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setThumbnailMode("upload");
+                        setThumbnailPreview("");
+                        form.setValue("thumbnailUrl", "");
+                      }}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                        thumbnailMode === "upload"
+                          ? "bg-white text-purple-700 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload Image
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setThumbnailMode("url");
+                        setThumbnailPreview("");
+                        form.setValue("thumbnailUrl", "");
+                      }}
+                      className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                        thumbnailMode === "url"
+                          ? "bg-white text-purple-700 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      <Link2 className="w-4 h-4" />
+                      External URL
+                    </button>
                   </div>
+
+                  {thumbnailMode === "upload" ? (
+                    <div
+                      onDragOver={(e) => handleDragOver(e, setIsDraggingThumbnail)}
+                      onDragLeave={(e) => handleDragLeave(e, setIsDraggingThumbnail)}
+                      onDrop={handleDropThumbnail}
+                      className={`relative border-2 border-dashed rounded-lg p-6 transition-all duration-200 cursor-pointer ${
+                        isDraggingThumbnail
+                          ? "border-purple-500 bg-purple-50 scale-[1.02]"
+                          : "border-gray-300 bg-gray-50 hover:border-purple-400 hover:bg-purple-50/50"
+                      }`}
+                      data-testid="dropzone-featured-image"
+                    >
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <Upload className={`w-8 h-8 transition-all ${isDraggingThumbnail ? "text-purple-600 scale-110" : "text-gray-400"}`} />
+                        <div className="text-center">
+                          <p className="font-medium text-sm text-gray-700">Drag and drop your image here</p>
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB</p>
+                        </div>
+                      </div>
+                      <label className="absolute inset-0 cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) {
+                              handleFileUpload(e.target.files[0], setThumbnailPreview, "thumbnailUrl");
+                              toast({ title: "Image uploaded", description: "Featured image added successfully" });
+                            }
+                          }}
+                          className="hidden"
+                          data-testid="input-upload-featured-image"
+                        />
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="https://example.com/image.jpg"
+                        value={form.watch("thumbnailUrl") || ""}
+                        onChange={(e) => {
+                          form.setValue("thumbnailUrl", e.target.value);
+                          setThumbnailPreview(e.target.value);
+                        }}
+                        data-testid="input-thumbnail-url"
+                        className="w-full"
+                      />
+                      <p className="text-xs text-gray-500">Enter the URL of an external image</p>
+                    </div>
+                  )}
+                  
                   {thumbnailPreview && (
-                    <div className="relative">
-                      <img src={thumbnailPreview} alt="Featured" className="h-32 w-full rounded object-cover border border-primary/30" />
+                    <div className="relative mt-2">
+                      <img 
+                        src={thumbnailPreview} 
+                        alt="Preview" 
+                        className="h-32 w-full rounded-lg object-cover border border-gray-200 shadow-sm"
+                        onError={() => setThumbnailPreview("")}
+                      />
                       <Button
                         type="button"
                         variant="ghost"
@@ -646,7 +705,7 @@ export function ArticlesPage() {
                           setThumbnailPreview("");
                           form.setValue("thumbnailUrl", "");
                         }}
-                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white"
+                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white shadow-sm"
                         data-testid="button-remove-featured-image"
                       >
                         <Trash2 className="w-4 h-4" />

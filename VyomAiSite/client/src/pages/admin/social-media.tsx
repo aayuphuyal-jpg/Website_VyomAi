@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   Linkedin, Instagram, Facebook, Youtube, MessageCircle, Phone,
   Link2, ExternalLink, Check, X, TrendingUp, Users, Heart, Share2,
-  Save, RefreshCw
+  Save, RefreshCw, BarChart3, Eye, Globe, ArrowUpRight, Zap
 } from "lucide-react";
 import type { SiteSettings, SocialMediaIntegration } from "@shared/schema";
 
@@ -23,7 +23,7 @@ const socialPlatforms = [
     color: "bg-blue-600",
     lightBg: "bg-blue-50",
     urlPlaceholder: "https://linkedin.com/company/vyomai",
-    description: "Professional networking and B2B connections"
+    description: "Professional networking"
   },
   { 
     id: "instagram", 
@@ -32,7 +32,7 @@ const socialPlatforms = [
     color: "bg-gradient-to-br from-pink-500 to-purple-600",
     lightBg: "bg-pink-50",
     urlPlaceholder: "https://instagram.com/vyomai",
-    description: "Visual content and brand storytelling"
+    description: "Visual storytelling"
   },
   { 
     id: "facebook", 
@@ -41,7 +41,7 @@ const socialPlatforms = [
     color: "bg-blue-500",
     lightBg: "bg-blue-50",
     urlPlaceholder: "https://facebook.com/vyomai",
-    description: "Community engagement and updates"
+    description: "Community engagement"
   },
   { 
     id: "youtube", 
@@ -50,7 +50,7 @@ const socialPlatforms = [
     color: "bg-red-500",
     lightBg: "bg-red-50",
     urlPlaceholder: "https://youtube.com/@vyomai",
-    description: "Video content and tutorials"
+    description: "Video content"
   },
   { 
     id: "whatsapp", 
@@ -59,7 +59,7 @@ const socialPlatforms = [
     color: "bg-green-500",
     lightBg: "bg-green-50",
     urlPlaceholder: "https://wa.me/9779812345678",
-    description: "Direct customer communication"
+    description: "Direct messaging"
   },
   { 
     id: "viber", 
@@ -68,7 +68,7 @@ const socialPlatforms = [
     color: "bg-purple-500",
     lightBg: "bg-purple-50",
     urlPlaceholder: "viber://chat?number=9779812345678",
-    description: "Alternative messaging platform"
+    description: "Messaging platform"
   },
 ];
 
@@ -80,10 +80,6 @@ export default function SocialMediaAdmin() {
 
   const { data: settings, isLoading } = useQuery<SiteSettings>({
     queryKey: ["/api/settings"],
-  });
-
-  const { data: integrations } = useQuery<SocialMediaIntegration[]>({
-    queryKey: ["/api/integrations"],
   });
 
   const updateMutation = useMutation({
@@ -130,6 +126,9 @@ export default function SocialMediaAdmin() {
     return editedEnabled[platformId] ?? (settings?.socialMediaEnabled as Record<string, boolean>)?.[platformId] ?? true;
   };
 
+  const connectedCount = socialPlatforms.filter(p => getLink(p.id)).length;
+  const enabledCount = socialPlatforms.filter(p => getEnabled(p.id)).length;
+
   if (isLoading) {
     return (
       <AdminLayout>
@@ -147,10 +146,10 @@ export default function SocialMediaAdmin() {
           <div>
             <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <Share2 className="w-6 h-6 text-purple-600" />
-              Social Media Integrations
+              Social Media Dashboard
             </h2>
             <p className="text-gray-500 text-sm mt-1">
-              Manage your social media links and visibility settings
+              Manage your social presence and track engagement
             </p>
           </div>
           <Button 
@@ -167,106 +166,95 @@ export default function SocialMediaAdmin() {
           </Button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {socialPlatforms.map((platform) => {
-            const Icon = platform.icon;
-            const isEnabled = getEnabled(platform.id);
-            const link = getLink(platform.id);
-            
-            return (
-              <Card 
-                key={platform.id} 
-                className={`border-gray-200 shadow-sm transition-all ${
-                  isEnabled ? "ring-2 ring-purple-200" : "opacity-60"
-                }`}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2.5 rounded-xl ${platform.color}`}>
-                        <Icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-gray-900 text-base">{platform.name}</CardTitle>
-                        <CardDescription className="text-gray-500 text-xs">
-                          {platform.description}
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={isEnabled}
-                      onCheckedChange={(checked) => {
-                        setEditedEnabled(prev => ({ ...prev, [platform.id]: checked }));
-                      }}
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2">
-                    <Label className="text-gray-600 text-xs">Profile URL</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder={platform.urlPlaceholder}
-                        value={link}
-                        onChange={(e) => {
-                          setEditedLinks(prev => ({ ...prev, [platform.id]: e.target.value }));
-                        }}
-                        className="text-sm"
-                      />
-                      {link && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="shrink-0"
-                          onClick={() => window.open(link, "_blank")}
-                        >
-                          <ExternalLink className="w-4 h-4 text-gray-500" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 pt-2">
-                    <Badge 
-                      variant={link ? "default" : "secondary"}
-                      className={link ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}
-                    >
-                      {link ? (
-                        <><Check className="w-3 h-3 mr-1" /> Connected</>
-                      ) : (
-                        <><X className="w-3 h-3 mr-1" /> Not Set</>
-                      )}
-                    </Badge>
-                    <Badge 
-                      variant="secondary"
-                      className={isEnabled ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-500"}
-                    >
-                      {isEnabled ? "Visible" : "Hidden"}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-0 text-white">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm">Connected Platforms</p>
+                  <p className="text-3xl font-bold mt-1">{connectedCount}/{socialPlatforms.length}</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-xl">
+                  <Globe className="w-6 h-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-500 to-green-600 border-0 text-white">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-sm">Visible on Site</p>
+                  <p className="text-3xl font-bold mt-1">{enabledCount}</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-xl">
+                  <Eye className="w-6 h-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 text-white">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm">Total Followers</p>
+                  <p className="text-3xl font-bold mt-1">-</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-xl">
+                  <Users className="w-6 h-6" />
+                </div>
+              </div>
+              <p className="text-xs text-blue-200 mt-2 flex items-center gap-1">
+                <Zap className="w-3 h-3" /> Coming soon
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-pink-500 to-pink-600 border-0 text-white">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-pink-100 text-sm">Engagement Rate</p>
+                  <p className="text-3xl font-bold mt-1">-</p>
+                </div>
+                <div className="p-3 bg-white/20 rounded-xl">
+                  <Heart className="w-6 h-6" />
+                </div>
+              </div>
+              <p className="text-xs text-pink-200 mt-2 flex items-center gap-1">
+                <Zap className="w-3 h-3" /> Coming soon
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-green-600" />
-              Analytics Overview
-            </CardTitle>
-            <CardDescription className="text-gray-500">
-              Social media performance metrics (coming soon)
-            </CardDescription>
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-gray-900 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-purple-600" />
+                  Performance Analytics
+                </CardTitle>
+                <CardDescription className="text-gray-500">
+                  Track your social media metrics across all platforms
+                </CardDescription>
+              </div>
+              <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
+                <TrendingUp className="w-3 h-3 mr-1" />
+                Analytics Coming Soon
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: "Total Followers", value: "—", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-                { label: "Engagement Rate", value: "—", icon: Heart, color: "text-pink-600", bg: "bg-pink-50" },
-                { label: "Total Shares", value: "—", icon: Share2, color: "text-green-600", bg: "bg-green-50" },
-                { label: "Link Clicks", value: "—", icon: Link2, color: "text-purple-600", bg: "bg-purple-50" },
+                { label: "Total Reach", value: "-", icon: Eye, color: "text-blue-600", bg: "bg-blue-50" },
+                { label: "Total Shares", value: "-", icon: Share2, color: "text-green-600", bg: "bg-green-50" },
+                { label: "Link Clicks", value: "-", icon: Link2, color: "text-purple-600", bg: "bg-purple-50" },
+                { label: "Profile Views", value: "-", icon: ArrowUpRight, color: "text-orange-600", bg: "bg-orange-50" },
               ].map((stat) => (
                 <div key={stat.label} className={`p-4 rounded-xl ${stat.bg} border border-gray-100`}>
                   <div className="flex items-center gap-2 mb-2">
@@ -276,6 +264,90 @@ export default function SocialMediaAdmin() {
                   <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-gray-200 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-gray-900 flex items-center gap-2">
+              <Globe className="w-5 h-5 text-purple-600" />
+              Platform Connections
+            </CardTitle>
+            <CardDescription className="text-gray-500">
+              Configure your social media links and visibility
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {socialPlatforms.map((platform) => {
+                const Icon = platform.icon;
+                const isEnabled = getEnabled(platform.id);
+                const link = getLink(platform.id);
+                
+                return (
+                  <div 
+                    key={platform.id} 
+                    className={`p-4 rounded-xl border transition-all ${
+                      isEnabled 
+                        ? "border-purple-200 bg-white shadow-sm" 
+                        : "border-gray-200 bg-gray-50 opacity-70"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${platform.color}`}>
+                          <Icon className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">{platform.name}</p>
+                          <p className="text-xs text-gray-500">{platform.description}</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={isEnabled}
+                        onCheckedChange={(checked) => {
+                          setEditedEnabled(prev => ({ ...prev, [platform.id]: checked }));
+                        }}
+                      />
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder={platform.urlPlaceholder}
+                        value={link}
+                        onChange={(e) => {
+                          setEditedLinks(prev => ({ ...prev, [platform.id]: e.target.value }));
+                        }}
+                        className="text-sm h-9"
+                      />
+                      {link && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-9 w-9 shrink-0"
+                          onClick={() => window.open(link, "_blank")}
+                        >
+                          <ExternalLink className="w-4 h-4 text-gray-500" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mt-3">
+                      <Badge 
+                        variant="secondary"
+                        className={link ? "bg-green-100 text-green-700 text-xs" : "bg-gray-100 text-gray-500 text-xs"}
+                      >
+                        {link ? (
+                          <><Check className="w-3 h-3 mr-1" /> Connected</>
+                        ) : (
+                          <><X className="w-3 h-3 mr-1" /> Not Set</>
+                        )}
+                      </Badge>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
