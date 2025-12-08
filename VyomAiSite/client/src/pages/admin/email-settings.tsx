@@ -73,7 +73,7 @@ export default function EmailSettingsAdmin() {
   }, [emailData]);
 
   const saveMutation = useMutation({
-    mutationFn: async (newConfig: Partial<EmailConfig>) => {
+    mutationFn: async (configToSave: EmailConfig) => {
       const token = localStorage.getItem("vyomai-admin-token");
       const res = await fetch("/api/admin/email-config", {
         method: "PUT",
@@ -82,17 +82,17 @@ export default function EmailSettingsAdmin() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          emailProvider: newConfig.provider,
-          emailFromName: newConfig.fromName,
-          emailFromAddress: newConfig.fromAddress,
-          emailReplyTo: newConfig.replyTo,
-          smtpHost: newConfig.smtpHost,
-          smtpPort: newConfig.smtpPort,
-          smtpUser: newConfig.smtpUser,
-          smtpSecure: newConfig.smtpSecure,
-          sendgridFromEmail: newConfig.sendgridFromEmail,
-          emailProviderPriority: newConfig.providerPriority,
-          emailFeaturesEnabled: newConfig.emailFeaturesEnabled,
+          emailProvider: configToSave.provider,
+          emailFromName: configToSave.fromName,
+          emailFromAddress: configToSave.fromAddress,
+          emailReplyTo: configToSave.replyTo,
+          smtpHost: configToSave.smtpHost,
+          smtpPort: configToSave.smtpPort,
+          smtpUser: configToSave.smtpUser,
+          smtpSecure: configToSave.smtpSecure,
+          sendgridFromEmail: configToSave.sendgridFromEmail,
+          emailProviderPriority: configToSave.providerPriority,
+          emailFeaturesEnabled: configToSave.emailFeaturesEnabled,
         }),
       });
       if (!res.ok) throw new Error("Failed to save config");
