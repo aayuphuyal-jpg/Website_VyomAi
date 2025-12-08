@@ -33,29 +33,18 @@ export function MediaSection() {
 
   const publishedArticles = articles?.filter((a) => a.published) || [];
   
-  // Smart filtering: limit "All" tab to show curated content (1-2 per type)
-  const getSmartFilteredArticles = () => {
+  // Filter articles based on active tab - show ALL content for "all" tab
+  const getFilteredArticles = () => {
     if (activeTab === "all") {
-      // Group by type and limit to 1-2 items per type for curated display
-      const grouped: Record<string, typeof publishedArticles> = {};
-      publishedArticles.forEach((article) => {
-        if (!grouped[article.type]) grouped[article.type] = [];
-        grouped[article.type].push(article);
-      });
-      
-      // Take 1-2 items per type (or less if not available)
-      const curated: typeof publishedArticles = [];
-      Object.values(grouped).forEach((typeArticles) => {
-        curated.push(...typeArticles.slice(0, 2)); // Max 2 per type
-      });
-      return curated;
+      // Return ALL published articles for the "All" tab
+      return publishedArticles;
     }
     
     // For specific types, show all of that type
     return publishedArticles.filter((a) => a.type === activeTab);
   };
   
-  const filteredArticles = getSmartFilteredArticles();
+  const filteredArticles = getFilteredArticles();
   const featuredArticle = publishedArticles[0];
   const otherArticles = filteredArticles.filter(a => a.id !== featuredArticle?.id);
 
