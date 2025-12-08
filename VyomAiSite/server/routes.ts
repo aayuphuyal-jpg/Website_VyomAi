@@ -578,27 +578,119 @@ Always maintain a balance between being professional and approachable. Reference
     }
   });
 
-  // Email status endpoint
+  // Email configuration endpoints - Multi-provider support
   app.get("/api/admin/email-status", authMiddleware, async (req, res) => {
     try {
-      const { getUncachableGmailClient } = await import("./gmail-client");
-      const gmail = await getUncachableGmailClient();
-      const profile = await gmail.users.getProfile({ userId: "me" });
-      res.json({ connected: true, email: profile.data.emailAddress });
+      const { testEmailProvider } = await import("./email-service");
+      const settings = await storage.getSettings();
+      const primaryProvider = (settings as any).emailProvider || "smtp";
+      
+      const result = await testEmailProvider(primaryProvider as any);
+      
+      res.json({
+        connected: result.success,
+        provider: primaryProvider,
+        email: (settings as any).emailFromAddress || "info@vyomai.cloud",
+        error: result.error,
+      });
     } catch (error) {
-      res.json({ connected: false });
+      res.json({ connected: false, error: "Failed to check email status" });
+    }
+  });
+
+  // Get all provider statuses
+  app.get("/api/admin/email-providers", authMiddleware, async (req, res) => {
+    try {
+      const { getProviderStatuses } = await import("./email-service");
+      const settings = await storage.getSettings() as any;
+      const statuses = await getProviderStatuses();
+      
+      res.json({
+        providers: statuses,
+        config: {
+          provider: settings.emailProvider || "smtp",
+          fromName: settings.emailFromName || "VyomAi",
+          fromAddress: settings.emailFromAddress || "info@vyomai.cloud",
+          replyTo: settings.emailReplyTo,
+          smtpHost: settings.smtpHost,
+          smtpPort: settings.smtpPort || "587",
+          smtpUser: settings.smtpUser,
+          smtpSecure: settings.smtpSecure || false,
+          sendgridFromEmail: settings.sendgridFromEmail,
+          providerPriority: settings.emailProviderPriority || "smtp,gmail,sendgrid",
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get provider statuses" });
+    }
+  });
+
+  // Update email configuration
+  app.put("/api/admin/email-config", authMiddleware, async (req, res) => {
+    try {
+      const { clearEmailConfigCache } = await import("./email-service");
+      const {
+        emailProvider,
+        emailFromName,
+        emailFromAddress,
+        emailReplyTo,
+        smtpHost,
+        smtpPort,
+        smtpUser,
+        smtpSecure,
+        sendgridFromEmail,
+        emailProviderPriority,
+      } = req.body;
+
+      const updatedSettings = await storage.updateSettings({
+        emailProvider,
+        emailFromName,
+        emailFromAddress,
+        emailReplyTo,
+        smtpHost,
+        smtpPort,
+        smtpUser,
+        smtpSecure,
+        sendgridFromEmail,
+        emailProviderPriority,
+      } as any);
+
+      clearEmailConfigCache();
+
+      res.json({ success: true, settings: updatedSettings });
+    } catch (error) {
+      console.error("Update email config error:", error);
+      res.status(500).json({ error: "Failed to update email configuration" });
+    }
+  });
+
+  // Test specific provider
+  app.post("/api/admin/test-email-provider", authMiddleware, async (req, res) => {
+    try {
+      const { testEmailProvider } = await import("./email-service");
+      const { provider } = req.body;
+      
+      if (!provider || !["gmail", "smtp", "sendgrid"].includes(provider)) {
+        return res.status(400).json({ error: "Invalid provider" });
+      }
+
+      const result = await testEmailProvider(provider);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to test provider" });
     }
   });
 
   // Test email endpoint
   app.post("/api/admin/test-email", authMiddleware, async (req, res) => {
     try {
+      const { sendEmailWithResult } = await import("./email-service");
       const { email } = req.body;
       if (!email) {
         return res.status(400).json({ error: "Email address required" });
       }
       
-      const result = await sendEmail({
+      const result = await sendEmailWithResult({
         to: email,
         subject: "VyomAi Test Email",
         html: `
@@ -612,14 +704,14 @@ Always maintain a balance between being professional and approachable. Reference
         `,
       });
       
-      if (result) {
-        res.json({ success: true });
+      if (result.success) {
+        res.json({ success: true, provider: result.provider });
       } else {
-        res.status(500).json({ error: "Failed to send email" });
+        res.status(500).json({ error: result.error || "Failed to send email" });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Test email error:", error);
-      res.status(500).json({ error: "Failed to send test email" });
+      res.status(500).json({ error: error.message || "Failed to send test email" });
     }
   });
 

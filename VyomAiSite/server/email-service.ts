@@ -1,60 +1,89 @@
-import { getUncachableGmailClient } from "./gmail-client";
+import { sendEmailWithProvider, testProvider, escapeHtml, type EmailOptions, type EmailConfig, type EmailResult, type EmailProvider } from "./email-providers";
+import { storage } from "./storage";
 
-interface EmailOptions {
-  to: string;
-  subject: string;
-  html: string;
-  text?: string;
+let cachedConfig: EmailConfig | null = null;
+let configLastFetched = 0;
+const CONFIG_CACHE_TTL = 60000; // 1 minute
+
+async function getEmailConfig(): Promise<EmailConfig> {
+  const now = Date.now();
+  if (cachedConfig && now - configLastFetched < CONFIG_CACHE_TTL) {
+    return cachedConfig;
+  }
+
+  try {
+    const settings = await storage.getSettings();
+    
+    const providerPriority = (settings.emailProviderPriority || "smtp,gmail,sendgrid")
+      .split(",")
+      .map((p: string) => p.trim() as EmailProvider)
+      .filter((p: string) => ["gmail", "smtp", "sendgrid"].includes(p));
+
+    cachedConfig = {
+      provider: (settings.emailProvider as EmailProvider) || "smtp",
+      fromName: settings.emailFromName || "VyomAi",
+      fromAddress: settings.emailFromAddress || "info@vyomai.cloud",
+      replyTo: settings.emailReplyTo,
+      smtpHost: settings.smtpHost,
+      smtpPort: settings.smtpPort || "587",
+      smtpUser: settings.smtpUser,
+      smtpSecure: settings.smtpSecure || false,
+      sendgridFromEmail: settings.sendgridFromEmail,
+      providerPriority: providerPriority.length > 0 ? providerPriority : ["smtp", "gmail", "sendgrid"],
+    };
+    configLastFetched = now;
+    return cachedConfig;
+  } catch (error) {
+    return {
+      provider: "smtp",
+      fromName: "VyomAi",
+      fromAddress: "info@vyomai.cloud",
+      providerPriority: ["smtp", "gmail", "sendgrid"],
+    };
+  }
 }
 
-interface EmailWithAttachmentOptions extends EmailOptions {
-  attachmentBuffer: Buffer;
-  attachmentFilename: string;
-}
-
-// HTML escape utility for Node.js
-function escapeHtml(text: string): string {
-  const escapeMap: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  };
-  return text.replace(/[&<>"']/g, (char) => escapeMap[char] || char);
+export function clearEmailConfigCache(): void {
+  cachedConfig = null;
+  configLastFetched = 0;
 }
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
-  try {
-    const gmail = await getUncachableGmailClient();
-    
-    // Create email message
-    const message = [
-      `To: ${options.to}`,
-      `Subject: ${options.subject}`,
-      "Content-Type: text/html; charset=utf-8",
-      "",
-      options.html,
-    ].join("\n");
+  const config = await getEmailConfig();
+  const result = await sendEmailWithProvider(options, config);
+  return result.success;
+}
 
-    // Encode message as base64
-    const encodedMessage = Buffer.from(message).toString("base64").replace(/\+/g, "-").replace(/\//g, "_");
+export async function sendEmailWithResult(options: EmailOptions): Promise<EmailResult> {
+  const config = await getEmailConfig();
+  return sendEmailWithProvider(options, config);
+}
 
-    // Send email via Gmail API
-    await gmail.users.messages.send({
-      userId: "me",
-      requestBody: {
-        raw: encodedMessage,
-      },
-    });
+export async function testEmailProvider(provider?: EmailProvider): Promise<EmailResult> {
+  const config = await getEmailConfig();
+  const providerToTest = provider || config.provider;
+  return testProvider(providerToTest, config);
+}
 
-    return true;
-  } catch (error) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("Email send error:", error);
-    }
-    return false;
-  }
+export async function getProviderStatuses(): Promise<Record<EmailProvider, { available: boolean; error?: string }>> {
+  const config = await getEmailConfig();
+  const results: Record<EmailProvider, { available: boolean; error?: string }> = {
+    gmail: { available: false },
+    smtp: { available: false },
+    sendgrid: { available: false },
+  };
+
+  const tests = await Promise.all([
+    testProvider("gmail", config),
+    testProvider("smtp", config),
+    testProvider("sendgrid", config),
+  ]);
+
+  results.gmail = { available: tests[0].success, error: tests[0].error };
+  results.smtp = { available: tests[1].success, error: tests[1].error };
+  results.sendgrid = { available: tests[2].success, error: tests[2].error };
+
+  return results;
 }
 
 export async function sendContactFormEmail(data: {
@@ -63,6 +92,8 @@ export async function sendContactFormEmail(data: {
   subject: string;
   message: string;
 }): Promise<void> {
+  const config = await getEmailConfig();
+  
   const html = `
     <h2>New Contact Form Submission</h2>
     <p><strong>Name:</strong> ${escapeHtml(data.name)}</p>
@@ -83,15 +114,13 @@ export async function sendContactFormEmail(data: {
     ${data.message}
   `;
 
-  // Send to company email
   await sendEmail({
-    to: "info@vyomai.cloud",
+    to: config.fromAddress,
     subject: `New Contact: ${data.subject}`,
     html,
     text,
   });
 
-  // Send confirmation to user
   const confirmHtml = `
     <h2>Thank you for contacting VyomAi!</h2>
     <p>Hi ${escapeHtml(data.name)},</p>
@@ -118,10 +147,10 @@ export async function sendOneTimePricingRequestEmail(data: {
   currency: string;
   adminEmail?: string;
 }): Promise<void> {
+  const config = await getEmailConfig();
   const currencySymbols: Record<string, string> = { USD: "$", EUR: "€", INR: "₹", NPR: "₨" };
   const symbol = currencySymbols[data.currency] || "$";
 
-  // Send to admin
   const adminHtml = `
     <h2>New Custom Pricing Request</h2>
     <p><strong>Package:</strong> ${escapeHtml(data.packageName)}</p>
@@ -135,12 +164,11 @@ export async function sendOneTimePricingRequestEmail(data: {
   `;
 
   await sendEmail({
-    to: data.adminEmail || "info@vyomai.cloud",
+    to: data.adminEmail || config.fromAddress,
     subject: `New Custom Pricing Request for ${data.packageName}`,
     html: adminHtml,
   });
 
-  // Send confirmation to customer
   const customerHtml = `
     <h2>We Received Your Custom Pricing Request!</h2>
     <p>Hi ${escapeHtml(data.name)},</p>
@@ -173,7 +201,6 @@ export async function sendPasswordResetEmail(
     <p>If you didn't request this, you can ignore this email.</p>
   `;
 
-  // Log verification code only in development for testing
   if (process.env.NODE_ENV !== "production") {
     console.log("🔐 PASSWORD RESET CODE");
     console.log("═".repeat(50));
@@ -190,44 +217,81 @@ export async function sendPasswordResetEmail(
   });
 }
 
-export async function sendEmailWithAttachment(options: EmailWithAttachmentOptions): Promise<boolean> {
+export async function sendEmailWithAttachment(options: {
+  to: string;
+  subject: string;
+  html: string;
+  attachmentBuffer: Buffer;
+  attachmentFilename: string;
+}): Promise<boolean> {
+  const config = await getEmailConfig();
+  
   try {
-    const gmail = await getUncachableGmailClient();
+    const nodemailer = await import("nodemailer");
+    const smtpPassword = process.env.EMAIL_SMTP_PASSWORD;
     
-    const boundary = `----WebKitFormBoundary${Math.random().toString(36).substr(2, 9)}`;
-    
-    const emailContent = [
-      `To: ${options.to}`,
-      `Subject: ${options.subject}`,
-      `MIME-Version: 1.0`,
-      `Content-Type: multipart/mixed; boundary="${boundary}"`,
-      ``,
-      `--${boundary}`,
-      `Content-Type: text/html; charset=utf-8`,
-      `Content-Transfer-Encoding: quoted-printable`,
-      ``,
-      options.html,
-      ``,
-      `--${boundary}`,
-      `Content-Type: application/pdf; name="${options.attachmentFilename}"`,
-      `Content-Disposition: attachment; filename="${options.attachmentFilename}"`,
-      `Content-Transfer-Encoding: base64`,
-      ``,
-      options.attachmentBuffer.toString("base64").match(/.{1,76}/g)?.join("\n") || "",
-      ``,
-      `--${boundary}--`
-    ].join("\n");
+    if (!config.smtpHost || !config.smtpUser || !smtpPassword) {
+      if (!process.env.REPLIT_CONNECTORS_HOSTNAME) {
+        console.error("No email provider available for attachments");
+        return false;
+      }
+      
+      const { getUncachableGmailClient } = await import("./gmail-client");
+      const gmail = await getUncachableGmailClient();
+      
+      const boundary = `----WebKitFormBoundary${Math.random().toString(36).substr(2, 9)}`;
+      
+      const emailContent = [
+        `To: ${options.to}`,
+        `Subject: ${options.subject}`,
+        `MIME-Version: 1.0`,
+        `Content-Type: multipart/mixed; boundary="${boundary}"`,
+        ``,
+        `--${boundary}`,
+        `Content-Type: text/html; charset=utf-8`,
+        `Content-Transfer-Encoding: quoted-printable`,
+        ``,
+        options.html,
+        ``,
+        `--${boundary}`,
+        `Content-Type: application/pdf; name="${options.attachmentFilename}"`,
+        `Content-Disposition: attachment; filename="${options.attachmentFilename}"`,
+        `Content-Transfer-Encoding: base64`,
+        ``,
+        options.attachmentBuffer.toString("base64").match(/.{1,76}/g)?.join("\n") || "",
+        ``,
+        `--${boundary}--`
+      ].join("\n");
 
-    const encodedMessage = Buffer.from(emailContent)
-      .toString("base64")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_");
+      const encodedMessage = Buffer.from(emailContent)
+        .toString("base64")
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_");
 
-    await gmail.users.messages.send({
-      userId: "me",
-      requestBody: {
-        raw: encodedMessage,
-      },
+      await gmail.users.messages.send({
+        userId: "me",
+        requestBody: { raw: encodedMessage },
+      });
+
+      return true;
+    }
+
+    const transporter = nodemailer.default.createTransport({
+      host: config.smtpHost,
+      port: parseInt(config.smtpPort || "587"),
+      secure: config.smtpSecure || false,
+      auth: { user: config.smtpUser, pass: smtpPassword },
+    });
+
+    await transporter.sendMail({
+      from: `"${config.fromName}" <${config.fromAddress}>`,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      attachments: [{
+        filename: options.attachmentFilename,
+        content: options.attachmentBuffer,
+      }],
     });
 
     return true;
@@ -245,6 +309,8 @@ export async function sendBookingConfirmationEmail(data: {
   companyOrPersonal: string;
   message?: string;
 }): Promise<void> {
+  const config = await getEmailConfig();
+  
   const html = `
     <h2>Booking Request Received!</h2>
     <p>Hi ${escapeHtml(data.name)},</p>
@@ -259,7 +325,6 @@ export async function sendBookingConfirmationEmail(data: {
     <p>Best regards,<br>VyomAi Team</p>
   `;
 
-  // Send to company
   const companyHtml = `
     <h2>New Booking Request</h2>
     <p><strong>Name:</strong> ${escapeHtml(data.name)}</p>
@@ -269,12 +334,11 @@ export async function sendBookingConfirmationEmail(data: {
   `;
 
   await sendEmail({
-    to: "info@vyomai.cloud",
+    to: config.fromAddress,
     subject: `New Booking Request from ${data.name}`,
     html: companyHtml,
   });
 
-  // Send confirmation to customer
   await sendEmail({
     to: data.email,
     subject: "Booking Request Confirmed - VyomAi",

@@ -136,6 +136,20 @@ export const siteSettingsSchema = z.object({
   welcomePopupButtonText: z.string().optional().default("Explore Now"),
   welcomePopupAnimationStyle: z.enum(["fade", "slide", "zoom", "glow"]).optional().default("fade"),
   welcomePopupDismissable: z.boolean().optional().default(true),
+  // Email Provider Configuration
+  emailProvider: z.enum(["gmail", "smtp", "sendgrid"]).optional().default("smtp"),
+  emailFromName: z.string().optional().default("VyomAi"),
+  emailFromAddress: z.string().email().optional().default("info@vyomai.cloud"),
+  emailReplyTo: z.string().email().optional(),
+  // SMTP Settings
+  smtpHost: z.string().optional(),
+  smtpPort: z.string().optional().default("587"),
+  smtpUser: z.string().optional(),
+  smtpSecure: z.boolean().optional().default(false),
+  // SendGrid Settings
+  sendgridFromEmail: z.string().email().optional(),
+  // Provider priority
+  emailProviderPriority: z.string().optional().default("smtp,gmail,sendgrid"),
 });
 
 export type SiteSettings = z.infer<typeof siteSettingsSchema>;
@@ -458,6 +472,22 @@ export const siteSettingsTable = pgTable("site_settings", {
   welcomePopupButtonText: varchar("welcome_popup_button_text").default("Explore Now"),
   welcomePopupAnimationStyle: varchar("welcome_popup_animation_style").default("fade"),
   welcomePopupDismissable: boolean("welcome_popup_dismissable").default(true),
+  // Email Provider Configuration
+  emailProvider: varchar("email_provider").default("smtp"), // 'gmail', 'smtp', 'sendgrid'
+  emailFromName: varchar("email_from_name").default("VyomAi"),
+  emailFromAddress: varchar("email_from_address").default("info@vyomai.cloud"),
+  emailReplyTo: varchar("email_reply_to"),
+  // SMTP Settings (non-secret fields only)
+  smtpHost: varchar("smtp_host"),
+  smtpPort: varchar("smtp_port").default("587"),
+  smtpUser: varchar("smtp_user"),
+  smtpSecure: boolean("smtp_secure").default(false),
+  // SendGrid Settings (non-secret fields only)
+  sendgridFromEmail: varchar("sendgrid_from_email"),
+  // Provider priority order (comma-separated: e.g., "smtp,gmail,sendgrid")
+  emailProviderPriority: varchar("email_provider_priority").default("smtp,gmail,sendgrid"),
+  // Provider health status (JSON: {"smtp": true, "gmail": false, "sendgrid": true})
+  emailProviderHealth: text("email_provider_health").default('{}'),
 });
 
 export const visitorStatsTable = pgTable("visitor_stats", {
