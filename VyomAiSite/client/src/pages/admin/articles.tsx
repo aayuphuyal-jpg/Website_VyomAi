@@ -646,7 +646,7 @@ export function ArticlesPage() {
                           setThumbnailPreview("");
                           form.setValue("thumbnailUrl", "");
                         }}
-                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white"
+                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white"
                         data-testid="button-remove-featured-image"
                       >
                         <Trash2 className="w-4 h-4" />
