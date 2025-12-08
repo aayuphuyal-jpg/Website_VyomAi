@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AdminLayout } from "./layout";
+import { AnimatedLogo } from "@/components/animated-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import { 
-  Mail, Send, Check, X, RefreshCw, Settings, Inbox,
-  CheckCircle2, Server, Zap, Shield, AlertTriangle, Globe, Key, Lock
+  Mail, Send, Check, RefreshCw, Settings, Inbox,
+  CheckCircle2, Server, Zap, Shield, AlertTriangle, Globe, Key, ArrowLeft
 } from "lucide-react";
 
 type EmailProvider = "gmail" | "smtp" | "sendgrid";
@@ -41,6 +42,7 @@ interface EmailProvidersResponse {
 export default function EmailSettingsAdmin() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [testEmail, setTestEmail] = useState("");
   const [isTesting, setIsTesting] = useState(false);
   const [config, setConfig] = useState<EmailConfig>({
@@ -165,25 +167,54 @@ export default function EmailSettingsAdmin() {
   const hasAnyProvider = emailData?.providers && Object.values(emailData.providers).some(p => p.available);
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Mail className="w-6 h-6 text-purple-600" />
-              Email Integration
-            </h2>
-            <p className="text-gray-500 text-sm mt-1">
-              Configure email providers for automated notifications
-            </p>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Enhanced Playful Background - Same as Admin Login */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-[hsl(262_83%_58%/0.05)] to-[hsl(24_95%_53%/0.08)] animate-pulse" style={{ animationDuration: "8s" }} />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-[hsl(262_83%_58%/0.15)] rounded-full blur-3xl animate-float" style={{ animationDuration: "15s" }} />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-[hsl(24_95%_53%/0.12)] rounded-full blur-3xl animate-float" style={{ animationDuration: "20s", animationDelay: "2s" }} />
+        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-[hsl(200_80%_50%/0.1)] rounded-full blur-3xl animate-float" style={{ animationDuration: "18s", animationDelay: "4s" }} />
+      </div>
+      <div className="absolute inset-0 particle-bg opacity-20" />
+      <div className="absolute inset-0 mandala-pattern opacity-8" />
+
+      <div className="relative z-10 container mx-auto px-4 py-8 max-w-5xl">
+        {/* Header with Logo */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => setLocation("/admin/dashboard")}
+              className="hover-elevate"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
           </div>
-          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+          <Button variant="outline" onClick={() => refetch()} disabled={isLoading} className="hover-elevate">
             <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh Status
           </Button>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        {/* Main Title Card */}
+        <Card className="glass-card border-0 mb-8">
+          <CardHeader className="text-center">
+            <div className="flex items-center justify-center mb-4">
+              <AnimatedLogo variant="login" showText={true} />
+            </div>
+            <CardTitle className="text-2xl flex items-center justify-center gap-2">
+              <Mail className="w-6 h-6 text-purple-600" />
+              Email Integration
+            </CardTitle>
+            <CardDescription>
+              Configure email providers for automated notifications
+            </CardDescription>
+          </CardHeader>
+        </Card>
+
+        {/* Provider Selection Cards */}
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
           {(["smtp", "gmail", "sendgrid"] as EmailProvider[]).map((provider) => {
             const info = providerInfo[provider];
             const Icon = info.icon;
@@ -193,8 +224,8 @@ export default function EmailSettingsAdmin() {
             return (
               <Card 
                 key={provider}
-                className={`border-2 cursor-pointer transition-all ${
-                  isSelected ? 'border-purple-500 bg-purple-50/50' : 'border-gray-200 hover:border-gray-300'
+                className={`glass-card border-2 cursor-pointer transition-all hover-elevate ${
+                  isSelected ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-900/20' : 'border-transparent hover:border-purple-300'
                 }`}
                 onClick={() => setConfig(prev => ({ ...prev, provider }))}
               >
@@ -220,7 +251,7 @@ export default function EmailSettingsAdmin() {
                 </CardHeader>
                 <CardContent className="pt-0">
                   {!status?.available && status?.error && (
-                    <p className="text-xs text-orange-600 bg-orange-50 p-2 rounded">{status.error}</p>
+                    <p className="text-xs text-orange-600 bg-orange-50 dark:bg-orange-900/20 p-2 rounded">{status.error}</p>
                   )}
                   {isSelected && (
                     <div className="mt-2 flex items-center gap-1 text-purple-600">
@@ -234,10 +265,11 @@ export default function EmailSettingsAdmin() {
           })}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border-gray-200 shadow-sm">
+        {/* Configuration Cards */}
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
+          <Card className="glass-card border-0">
             <CardHeader>
-              <CardTitle className="text-gray-900 flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                 <Settings className="w-5 h-5 text-purple-600" />
                 General Settings
               </CardTitle>
@@ -249,6 +281,7 @@ export default function EmailSettingsAdmin() {
                   value={config.fromName}
                   onChange={(e) => setConfig(prev => ({ ...prev, fromName: e.target.value }))}
                   placeholder="VyomAi"
+                  className="bg-background/50"
                 />
               </div>
               <div className="space-y-2">
@@ -258,6 +291,7 @@ export default function EmailSettingsAdmin() {
                   value={config.fromAddress}
                   onChange={(e) => setConfig(prev => ({ ...prev, fromAddress: e.target.value }))}
                   placeholder="info@vyomai.cloud"
+                  className="bg-background/50"
                 />
               </div>
               <div className="space-y-2">
@@ -267,15 +301,16 @@ export default function EmailSettingsAdmin() {
                   value={config.replyTo || ""}
                   onChange={(e) => setConfig(prev => ({ ...prev, replyTo: e.target.value }))}
                   placeholder="support@vyomai.cloud"
+                  className="bg-background/50"
                 />
               </div>
             </CardContent>
           </Card>
 
           {config.provider === "smtp" && (
-            <Card className="border-gray-200 shadow-sm">
+            <Card className="glass-card border-0">
               <CardHeader>
-                <CardTitle className="text-gray-900 flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Server className="w-5 h-5 text-blue-600" />
                   SMTP Configuration
                 </CardTitle>
@@ -289,6 +324,7 @@ export default function EmailSettingsAdmin() {
                       value={config.smtpHost || ""}
                       onChange={(e) => setConfig(prev => ({ ...prev, smtpHost: e.target.value }))}
                       placeholder="smtp.hostinger.com"
+                      className="bg-background/50"
                     />
                   </div>
                   <div className="space-y-2">
@@ -297,6 +333,7 @@ export default function EmailSettingsAdmin() {
                       value={config.smtpPort || "587"}
                       onChange={(e) => setConfig(prev => ({ ...prev, smtpPort: e.target.value }))}
                       placeholder="587"
+                      className="bg-background/50"
                     />
                   </div>
                 </div>
@@ -306,25 +343,26 @@ export default function EmailSettingsAdmin() {
                     value={config.smtpUser || ""}
                     onChange={(e) => setConfig(prev => ({ ...prev, smtpUser: e.target.value }))}
                     placeholder="info@vyomai.cloud"
+                    className="bg-background/50"
                   />
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
                     <Label>Use SSL/TLS</Label>
-                    <p className="text-xs text-gray-500">Enable for port 465</p>
+                    <p className="text-xs text-muted-foreground">Enable for port 465</p>
                   </div>
                   <Switch
                     checked={config.smtpSecure || false}
                     onCheckedChange={(checked) => setConfig(prev => ({ ...prev, smtpSecure: checked }))}
                   />
                 </div>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <Key className="w-4 h-4 text-amber-600 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-amber-800">SMTP Password Required</p>
-                      <p className="text-xs text-amber-700 mt-1">
-                        Set the environment variable <code className="bg-amber-100 px-1 rounded">EMAIL_SMTP_PASSWORD</code> in the Secrets tab with your SMTP password.
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">SMTP Password Required</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                        Set the environment variable <code className="bg-amber-100 dark:bg-amber-800 px-1 rounded">EMAIL_SMTP_PASSWORD</code> in the Secrets tab.
                       </p>
                     </div>
                   </div>
@@ -334,9 +372,9 @@ export default function EmailSettingsAdmin() {
           )}
 
           {config.provider === "sendgrid" && (
-            <Card className="border-gray-200 shadow-sm">
+            <Card className="glass-card border-0">
               <CardHeader>
-                <CardTitle className="text-gray-900 flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Zap className="w-5 h-5 text-purple-600" />
                   SendGrid Configuration
                 </CardTitle>
@@ -350,16 +388,17 @@ export default function EmailSettingsAdmin() {
                     value={config.sendgridFromEmail || ""}
                     onChange={(e) => setConfig(prev => ({ ...prev, sendgridFromEmail: e.target.value }))}
                     placeholder="noreply@vyomai.cloud"
+                    className="bg-background/50"
                   />
-                  <p className="text-xs text-gray-500">Must be verified in your SendGrid account</p>
+                  <p className="text-xs text-muted-foreground">Must be verified in your SendGrid account</p>
                 </div>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <Key className="w-4 h-4 text-amber-600 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-amber-800">API Key Required</p>
-                      <p className="text-xs text-amber-700 mt-1">
-                        Set the environment variable <code className="bg-amber-100 px-1 rounded">EMAIL_SENDGRID_API_KEY</code> in the Secrets tab with your SendGrid API key.
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">API Key Required</p>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                        Set the environment variable <code className="bg-amber-100 dark:bg-amber-800 px-1 rounded">EMAIL_SENDGRID_API_KEY</code> in the Secrets tab.
                       </p>
                     </div>
                   </div>
@@ -369,24 +408,24 @@ export default function EmailSettingsAdmin() {
           )}
 
           {config.provider === "gmail" && (
-            <Card className="border-gray-200 shadow-sm">
+            <Card className="glass-card border-0">
               <CardHeader>
-                <CardTitle className="text-gray-900 flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Mail className="w-5 h-5 text-red-500" />
                   Gmail Configuration
                 </CardTitle>
                 <CardDescription>Uses Replit's Gmail connector</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <Globe className="w-4 h-4 text-blue-600 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-blue-800">Replit Connector Required</p>
-                      <p className="text-xs text-blue-700 mt-1">
-                        This provider requires the Gmail connector to be set up in Replit. Go to Tools → Connections to connect your Gmail account.
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Replit Connector Required</p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                        This provider requires the Gmail connector to be set up in Replit. Go to Tools - Connections to connect your Gmail account.
                       </p>
-                      <p className="text-xs text-blue-700 mt-2">
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
                         <strong>Note:</strong> This only works on the Replit platform. For external deployments (like Hostinger), use SMTP instead.
                       </p>
                     </div>
@@ -397,20 +436,22 @@ export default function EmailSettingsAdmin() {
           )}
         </div>
 
-        <div className="flex justify-end">
+        {/* Save Button */}
+        <div className="flex justify-center mb-8">
           <Button 
             onClick={() => saveMutation.mutate(config)}
             disabled={saveMutation.isPending}
-            className="bg-purple-600 hover:bg-purple-700"
+            className="px-8 hover-elevate"
           >
             {saveMutation.isPending ? "Saving..." : "Save Configuration"}
           </Button>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card className="border-gray-200 shadow-sm">
+        {/* Test Email and Features */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="glass-card border-0">
             <CardHeader>
-              <CardTitle className="text-gray-900 flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                 <Send className="w-5 h-5 text-green-600" />
                 Test Email
               </CardTitle>
@@ -424,12 +465,13 @@ export default function EmailSettingsAdmin() {
                   placeholder="your@email.com"
                   value={testEmail}
                   onChange={(e) => setTestEmail(e.target.value)}
+                  className="bg-background/50"
                 />
               </div>
               <Button
                 onClick={sendTestEmail}
                 disabled={isTesting || !hasAnyProvider}
-                className="w-full bg-purple-600 hover:bg-purple-700"
+                className="w-full hover-elevate"
               >
                 {isTesting ? (
                   <>
@@ -451,9 +493,9 @@ export default function EmailSettingsAdmin() {
             </CardContent>
           </Card>
 
-          <Card className="border-gray-200 shadow-sm">
+          <Card className="glass-card border-0">
             <CardHeader>
-              <CardTitle className="text-gray-900 flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                 <Settings className="w-5 h-5 text-purple-600" />
                 Email Features
               </CardTitle>
@@ -464,11 +506,11 @@ export default function EmailSettingsAdmin() {
                 {features.map((feature, idx) => {
                   const Icon = feature.icon;
                   return (
-                    <div key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-gray-50">
+                    <div key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-background/50">
                       <Icon className="w-4 h-4 text-purple-600 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{feature.title}</p>
-                        <p className="text-xs text-gray-500">{feature.description}</p>
+                        <p className="text-sm font-medium">{feature.title}</p>
+                        <p className="text-xs text-muted-foreground">{feature.description}</p>
                         <Badge className={`mt-1 text-xs ${hasAnyProvider ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                           {hasAnyProvider ? 'Active' : 'Inactive'}
                         </Badge>
@@ -481,6 +523,6 @@ export default function EmailSettingsAdmin() {
           </Card>
         </div>
       </div>
-    </AdminLayout>
+    </div>
   );
 }
