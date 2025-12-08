@@ -11,6 +11,7 @@ import { CommunicationsPage } from "@/pages/admin/communications";
 import { SettingsPage } from "@/pages/admin/settings";
 import { PopupFormsPage } from "@/pages/admin/popup-forms";
 import { HomepageContentPage } from "@/pages/admin/homepage-content";
+import { UsersPage } from "@/pages/admin/users";
 import SocialMediaAdmin from "@/pages/admin/social-media";
 import EmailSettingsAdmin from "@/pages/admin/email-settings";
 
@@ -51,6 +52,7 @@ export default function AdminDashboardRouter() {
             <Route path="/admin/bookings" component={BookingsPage} />
             <Route path="/admin/inquiries" component={InquiriesPage} />
             <Route path="/admin/communications" component={CommunicationsPage} />
+            <Route path="/admin/users" component={UsersPage} />
             <Route path="/admin/popup-forms" component={PopupFormsPage} />
             <Route path="/admin/settings" component={SettingsPage} />
             <Route path="/admin" component={AdminDashboard} />

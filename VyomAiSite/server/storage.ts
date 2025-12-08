@@ -10,8 +10,11 @@ const isDatabaseAvailable = process.env.DATABASE_URL ? true : false;
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined>;
   updateUserPassword(id: string, hashedPassword: string): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
   
   getArticles(): Promise<Article[]>;
   getArticle(id: string): Promise<Article | undefined>;
@@ -386,9 +389,28 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      role: insertUser.role || "admin",
+      permissions: insertUser.permissions || "[]",
+      createdAt: new Date().toISOString()
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async updateUser(id: string, data: Partial<InsertUser>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) return undefined;
+    
+    const updated: User = { ...user, ...data };
+    this.users.set(id, updated);
+    return updated;
   }
 
   async updateUserPassword(id: string, hashedPassword: string): Promise<User | undefined> {
@@ -398,6 +420,10 @@ export class MemStorage implements IStorage {
     const updated: User = { ...user, password: hashedPassword };
     this.users.set(id, updated);
     return updated;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    return this.users.delete(id);
   }
 
   async storeResetCode(email: string, code: string): Promise<void> {

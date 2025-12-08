@@ -1185,6 +1185,15 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
     }
   });
 
+  app.get("/api/admin/bookings", authMiddleware, async (req, res) => {
+    try {
+      const bookings = await storage.getBookingRequests();
+      res.json(bookings);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get booking requests" });
+    }
+  });
+
   app.put("/api/admin/bookings/:id", authMiddleware, async (req, res) => {
     try {
       const { status, dueDate } = req.body;
@@ -1199,6 +1208,18 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
   });
 
   app.delete("/api/bookings/:id", authMiddleware, async (req, res) => {
+    try {
+      const deleted = await storage.deleteBookingRequest(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Booking not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete booking request" });
+    }
+  });
+
+  app.delete("/api/admin/bookings/:id", authMiddleware, async (req, res) => {
     try {
       const deleted = await storage.deleteBookingRequest(req.params.id);
       if (!deleted) {
@@ -1268,6 +1289,151 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
     } catch (error) {
       console.error("Delete inquiry error:", error);
       res.status(500).json({ error: "Failed to delete inquiry" });
+    }
+  });
+
+  // User Management routes
+  app.get("/api/admin/users", authMiddleware, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const safeUsers = users.map(u => ({
+        id: u.id,
+        username: u.username,
+        email: u.email,
+        role: u.role || "admin",
+        permissions: u.permissions,
+        twoFactorEnabled: u.twoFactorEnabled,
+        createdAt: u.createdAt
+      }));
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Get users error:", error);
+      res.status(500).json({ error: "Failed to retrieve users" });
+    }
+  });
+
+  app.post("/api/admin/users", authMiddleware, async (req, res) => {
+    try {
+      const currentUsername = (req as any).user?.username;
+      const currentUser = await storage.getUserByUsername(currentUsername);
+      if (!currentUser || currentUser.role !== "vyom_admin") {
+        return res.status(403).json({ error: "Only Vyom Admin can create users" });
+      }
+      
+      const { username, email, password, role, permissions } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        role: role || "admin",
+        permissions: permissions || "[]"
+      });
+      res.json({ 
+        id: user.id, 
+        username: user.username, 
+        email: user.email,
+        role: user.role,
+        permissions: user.permissions
+      });
+    } catch (error) {
+      console.error("Create user error:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
+  app.put("/api/admin/users/:id", authMiddleware, async (req, res) => {
+    try {
+      const currentUsername = (req as any).user?.username;
+      const currentUser = await storage.getUserByUsername(currentUsername);
+      if (!currentUser || currentUser.role !== "vyom_admin") {
+        return res.status(403).json({ error: "Only Vyom Admin can update users" });
+      }
+      
+      const { email, role, permissions } = req.body;
+      const targetUser = await storage.getUser(req.params.id);
+      if (!targetUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      if (targetUser.role === "vyom_admin" && currentUser.id !== targetUser.id) {
+        return res.status(403).json({ error: "Cannot modify another Vyom Admin" });
+      }
+      
+      const updated = await storage.updateUser(req.params.id, { email, role, permissions });
+      res.json({
+        id: updated!.id,
+        username: updated!.username,
+        email: updated!.email,
+        role: updated!.role,
+        permissions: updated!.permissions
+      });
+    } catch (error) {
+      console.error("Update user error:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  app.put("/api/admin/users/:id/password", authMiddleware, async (req, res) => {
+    try {
+      const currentUsername = (req as any).user?.username;
+      const currentUser = await storage.getUserByUsername(currentUsername);
+      if (!currentUser || currentUser.role !== "vyom_admin") {
+        return res.status(403).json({ error: "Only Vyom Admin can change passwords" });
+      }
+      
+      const { password } = req.body;
+      if (!password || password.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const updated = await storage.updateUser(req.params.id, { password: hashedPassword });
+      if (!updated) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Update password error:", error);
+      res.status(500).json({ error: "Failed to update password" });
+    }
+  });
+
+  app.delete("/api/admin/users/:id", authMiddleware, async (req, res) => {
+    try {
+      const currentUsername = (req as any).user?.username;
+      const currentUser = await storage.getUserByUsername(currentUsername);
+      if (!currentUser || currentUser.role !== "vyom_admin") {
+        return res.status(403).json({ error: "Only Vyom Admin can delete users" });
+      }
+      
+      const targetUser = await storage.getUser(req.params.id);
+      if (!targetUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      if (targetUser.id === currentUser.id) {
+        return res.status(403).json({ error: "Cannot delete your own account" });
+      }
+      
+      if (targetUser.role === "vyom_admin") {
+        return res.status(403).json({ error: "Cannot delete a Vyom Admin" });
+      }
+      
+      const deleted = await storage.deleteUser(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete user error:", error);
+      res.status(500).json({ error: "Failed to delete user" });
     }
   });
 

@@ -13,6 +13,8 @@ export const insertUserSchema = z.object({
   username: z.string().min(3),
   password: z.string().min(6),
   email: z.string().email().optional(),
+  role: z.enum(["vyom_admin", "admin", "ai_agent"]).optional().default("admin"),
+  permissions: z.string().optional(),
   twoFactorSecret: z.string().optional(),
   twoFactorEnabled: z.boolean().optional().default(false),
 });
@@ -40,7 +42,7 @@ export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
 export type VerifyResetCode = z.infer<typeof verifyResetCodeSchema>;
 export type ResetPassword = z.infer<typeof resetPasswordSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = { id: string; username: string; password: string; email?: string; twoFactorSecret?: string; twoFactorEnabled?: boolean };
+export type User = { id: string; username: string; password: string; email?: string; role?: string; permissions?: string; twoFactorSecret?: string; twoFactorEnabled?: boolean; createdAt?: Date | string };
 
 export const articleSchema = z.object({
   id: z.string(),
@@ -384,8 +386,11 @@ export const usersTable = pgTable("users", {
   username: varchar("username").notNull().unique(),
   password: varchar("password").notNull(),
   email: varchar("email"),
+  role: varchar("role").default("admin"),
+  permissions: text("permissions"),
   twoFactorSecret: varchar("two_factor_secret"),
   twoFactorEnabled: boolean("two_factor_enabled").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const articlesTable = pgTable("articles", {

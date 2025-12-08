@@ -204,9 +204,24 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getAllUsers(): Promise<User[]> {
+    const users = await db.select().from(usersTable);
+    return users as User[];
+  }
+
+  async updateUser(id: string, data: Partial<any>): Promise<User | undefined> {
+    const result = await db.update(usersTable).set(data).where(eq(usersTable.id, id)).returning();
+    return result[0] as User | undefined;
+  }
+
   async updateUserPassword(id: string, hashedPassword: string): Promise<User | undefined> {
     const result = await db.update(usersTable).set({ password: hashedPassword }).where(eq(usersTable.id, id)).returning();
     return result[0] as User | undefined;
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    await db.delete(usersTable).where(eq(usersTable.id, id));
+    return true;
   }
 
   async getArticles(): Promise<Article[]> {

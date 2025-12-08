@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { 
   LogOut, BarChart3, FileText, Users, DollarSign, BookOpen, MessageSquare, Settings, 
-  Home, Share2, Mail, Menu, X, ChevronRight, Sparkles
+  Home, Share2, Mail, Menu, X, ChevronRight, Sparkles, UserCog
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     {
       title: "System",
       items: [
+        { label: "User Management", href: "/admin/users", icon: UserCog },
         { label: "Popup Forms", href: "/admin/popup-forms", icon: Sparkles },
         { label: "Settings", href: "/admin/settings", icon: Settings },
       ],
