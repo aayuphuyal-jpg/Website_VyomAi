@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Article, type InsertArticle, type SiteSettings, type VisitorStats, type TeamMember, type InsertTeamMember, type PricingPackage, type InsertPricingPackage, type ProjectDiscussion, type InsertProjectDiscussion, type BookingRequest, type InsertBookingRequest, type SocialMediaAnalytics, type InsertSocialMediaAnalytics, type SocialMediaIntegration, type InsertSocialMediaIntegration, type OneTimePricingRequest, type InsertOneTimePricingRequest, type HeroContent, type InsertHeroContent, type AboutContent, type InsertAboutContent, type AboutValue, type InsertAboutValue, type ServicesContent, type InsertServicesContent, type ServiceItem, type InsertServiceItem, type SolutionsContent, type InsertSolutionsContent, type SolutionItem, type InsertSolutionItem } from "@shared/schema";
+import { type User, type InsertUser, type Article, type InsertArticle, type SiteSettings, type VisitorStats, type TeamMember, type InsertTeamMember, type PricingPackage, type InsertPricingPackage, type ProjectDiscussion, type InsertProjectDiscussion, type BookingRequest, type InsertBookingRequest, type SocialMediaAnalytics, type InsertSocialMediaAnalytics, type SocialMediaIntegration, type InsertSocialMediaIntegration, type OneTimePricingRequest, type InsertOneTimePricingRequest, type HeroContent, type InsertHeroContent, type AboutContent, type InsertAboutContent, type AboutValue, type InsertAboutValue, type ServicesContent, type InsertServicesContent, type ServiceItem, type InsertServiceItem, type SolutionsContent, type InsertSolutionsContent, type SolutionItem, type InsertSolutionItem, type PopupForm, type InsertPopupForm } from "@shared/schema";
 import { randomUUID } from "crypto";
 import bcryptjs from "bcryptjs";
 import { DatabaseStorage } from "./db-storage";
@@ -94,6 +94,14 @@ export interface IStorage {
   createSolutionItem(item: InsertSolutionItem): Promise<SolutionItem>;
   updateSolutionItem(id: string, item: Partial<InsertSolutionItem>): Promise<SolutionItem | undefined>;
   deleteSolutionItem(id: string): Promise<boolean>;
+  
+  // Popup Forms
+  getPopupForms(): Promise<PopupForm[]>;
+  getPopupForm(id: string): Promise<PopupForm | undefined>;
+  getActivePopupForm(): Promise<PopupForm | undefined>;
+  createPopupForm(form: InsertPopupForm): Promise<PopupForm>;
+  updatePopupForm(id: string, form: Partial<InsertPopupForm>): Promise<PopupForm | undefined>;
+  deletePopupForm(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -117,6 +125,7 @@ export class MemStorage implements IStorage {
   private serviceItems: Map<string, ServiceItem>;
   private solutionsContent: SolutionsContent | null;
   private solutionItems: Map<string, SolutionItem>;
+  private popupForms: Map<string, PopupForm>;
 
   constructor() {
     this.users = new Map();
@@ -139,6 +148,7 @@ export class MemStorage implements IStorage {
     this.serviceItems = new Map();
     this.solutionsContent = null;
     this.solutionItems = new Map();
+    this.popupForms = new Map();
     
     // Initialize default home page content
     this.initializeHomePageDefaults();
@@ -1043,6 +1053,39 @@ export class MemStorage implements IStorage {
 
   async deleteSolutionItem(id: string): Promise<boolean> {
     return this.solutionItems.delete(id);
+  }
+
+  // Popup Forms Methods
+  async getPopupForms(): Promise<PopupForm[]> {
+    return Array.from(this.popupForms.values());
+  }
+
+  async getPopupForm(id: string): Promise<PopupForm | undefined> {
+    return this.popupForms.get(id);
+  }
+
+  async getActivePopupForm(): Promise<PopupForm | undefined> {
+    return Array.from(this.popupForms.values()).find(form => form.enabled);
+  }
+
+  async createPopupForm(form: InsertPopupForm): Promise<PopupForm> {
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    const newForm: PopupForm = { ...form, id, createdAt: now, updatedAt: now };
+    this.popupForms.set(id, newForm);
+    return newForm;
+  }
+
+  async updatePopupForm(id: string, form: Partial<InsertPopupForm>): Promise<PopupForm | undefined> {
+    const existing = this.popupForms.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...form, updatedAt: new Date().toISOString() };
+    this.popupForms.set(id, updated);
+    return updated;
+  }
+
+  async deletePopupForm(id: string): Promise<boolean> {
+    return this.popupForms.delete(id);
   }
 }
 

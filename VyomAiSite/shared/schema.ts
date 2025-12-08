@@ -134,7 +134,7 @@ export const siteSettingsSchema = z.object({
   welcomePopupMessage: z.string().optional().default("Experience the future of AI solutions"),
   welcomePopupImageUrl: z.string().optional(),
   welcomePopupButtonText: z.string().optional().default("Explore Now"),
-  welcomePopupAnimationStyle: z.enum(["fade", "slide", "zoom", "glow"]).optional().default("fade"),
+  welcomePopupAnimationStyle: z.enum(["fade", "slide", "zoom", "glow", "bounce", "confetti", "sparkle", "gradient-wave", "pulse-ring"]).optional().default("fade"),
   welcomePopupDismissable: z.boolean().optional().default(true),
   // Email Provider Configuration
   emailProvider: z.enum(["gmail", "smtp", "sendgrid"]).optional().default("smtp"),
@@ -153,6 +153,36 @@ export const siteSettingsSchema = z.object({
 });
 
 export type SiteSettings = z.infer<typeof siteSettingsSchema>;
+
+// Popup Form Schema
+export const popupFormSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  formType: z.enum(["email_collection", "appointment", "holiday_greeting", "welcome", "coming_soon", "custom"]),
+  title: z.string(),
+  message: z.string().optional(),
+  buttonText: z.string().optional().default("Submit"),
+  buttonLink: z.string().optional(),
+  imageUrl: z.string().optional(),
+  animationStyle: z.enum(["fade", "slide", "bounce", "confetti", "sparkle", "gradient-wave", "glow", "pulse-ring"]).optional().default("fade"),
+  enabled: z.boolean().optional().default(false),
+  isDefault: z.boolean().optional().default(false),
+  showOnLoad: z.boolean().optional().default(true),
+  showDelay: z.string().optional().default("0"),
+  dismissable: z.boolean().optional().default(true),
+  collectEmail: z.boolean().optional().default(false),
+  collectPhone: z.boolean().optional().default(false),
+  collectName: z.boolean().optional().default(false),
+  successMessage: z.string().optional().default("Thank you!"),
+  backgroundColor: z.string().optional(),
+  textColor: z.string().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+
+export const insertPopupFormSchema = popupFormSchema.omit({ id: true, createdAt: true, updatedAt: true });
+export type PopupForm = z.infer<typeof popupFormSchema>;
+export type InsertPopupForm = z.infer<typeof insertPopupFormSchema>;
 
 export const chatMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -456,7 +486,9 @@ export const siteSettingsTable = pgTable("site_settings", {
   showContactSection: boolean("show_contact_section").default(true),
   footerLogoUrl: varchar("footer_logo_url"),
   footerContactEmail: varchar("footer_contact_email"),
+  footerMobileNumber: varchar("footer_mobile_number"),
   footerAddress: varchar("footer_address"),
+  publishFooter: boolean("publish_footer").default(true),
   showTeamSection: boolean("show_team_section").default(true),
   showPricingSection: boolean("show_pricing_section").default(true),
   showProjectDiscussionSection: boolean("show_project_discussion_section").default(true),
@@ -539,6 +571,32 @@ export const customerInquiriesTable = pgTable("customer_inquiries", {
   company: varchar("company"),
   status: varchar("status").default("new"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Popup Forms - Marketing popups for different purposes
+export const popupFormsTable = pgTable("popup_forms", {
+  id: varchar("id").primaryKey(),
+  name: varchar("name").notNull(),
+  formType: varchar("form_type").notNull(), // email_collection, appointment, holiday_greeting, welcome, coming_soon, custom
+  title: varchar("title").notNull(),
+  message: text("message"),
+  buttonText: varchar("button_text").default("Submit"),
+  buttonLink: varchar("button_link"),
+  imageUrl: varchar("image_url"),
+  animationStyle: varchar("animation_style").default("fade"), // fade, slide, bounce, confetti, sparkle, gradient-wave, glow, pulse-ring
+  enabled: boolean("enabled").default(false),
+  isDefault: boolean("is_default").default(false),
+  showOnLoad: boolean("show_on_load").default(true),
+  showDelay: varchar("show_delay").default("0"), // seconds
+  dismissable: boolean("dismissable").default(true),
+  collectEmail: boolean("collect_email").default(false),
+  collectPhone: boolean("collect_phone").default(false),
+  collectName: boolean("collect_name").default(false),
+  successMessage: varchar("success_message").default("Thank you!"),
+  backgroundColor: varchar("background_color"),
+  textColor: varchar("text_color"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // ============== HOME PAGE CONTENT SCHEMAS ==============

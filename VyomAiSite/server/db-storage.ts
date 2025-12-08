@@ -3,10 +3,10 @@ import {
   usersTable, articlesTable, teamMembersTable, pricingPackagesTable, 
   projectDiscussionTable, bookingRequestsTable, siteSettingsTable, 
   visitorStatsTable, socialMediaAnalyticsTable, socialMediaIntegrationsTable,
-  oneTimePricingRequestsTable, customerInquiriesTable
+  oneTimePricingRequestsTable, customerInquiriesTable, popupFormsTable
 } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { type User, type InsertUser, type Article, type InsertArticle, type SiteSettings, type VisitorStats, type TeamMember, type InsertTeamMember, type PricingPackage, type InsertPricingPackage, type ProjectDiscussion, type InsertProjectDiscussion, type BookingRequest, type InsertBookingRequest, type SocialMediaAnalytics, type InsertSocialMediaAnalytics, type SocialMediaIntegration, type InsertSocialMediaIntegration, type OneTimePricingRequest, type InsertOneTimePricingRequest, type CustomerInquiry, type InsertCustomerInquiry } from "@shared/schema";
+import { type User, type InsertUser, type Article, type InsertArticle, type SiteSettings, type VisitorStats, type TeamMember, type InsertTeamMember, type PricingPackage, type InsertPricingPackage, type ProjectDiscussion, type InsertProjectDiscussion, type BookingRequest, type InsertBookingRequest, type SocialMediaAnalytics, type InsertSocialMediaAnalytics, type SocialMediaIntegration, type InsertSocialMediaIntegration, type OneTimePricingRequest, type InsertOneTimePricingRequest, type CustomerInquiry, type InsertCustomerInquiry, type PopupForm, type InsertPopupForm } from "@shared/schema";
 import { randomUUID } from "crypto";
 import bcryptjs from "bcryptjs";
 
@@ -755,5 +755,45 @@ export class DatabaseStorage implements IStorage {
       this.resetCodeMap.delete(email);
     }
     return isValid;
+  }
+
+  // Popup Forms Methods
+  async getPopupForms(): Promise<PopupForm[]> {
+    return db.select().from(popupFormsTable) as Promise<PopupForm[]>;
+  }
+
+  async getPopupForm(id: string): Promise<PopupForm | undefined> {
+    const result = await db.select().from(popupFormsTable).where(eq(popupFormsTable.id, id));
+    return result[0] as PopupForm | undefined;
+  }
+
+  async getActivePopupForm(): Promise<PopupForm | undefined> {
+    const result = await db.select().from(popupFormsTable).where(eq(popupFormsTable.enabled, true));
+    return result[0] as PopupForm | undefined;
+  }
+
+  async createPopupForm(form: InsertPopupForm): Promise<PopupForm> {
+    const id = randomUUID();
+    const now = new Date();
+    const result = await db.insert(popupFormsTable).values({ 
+      id, 
+      ...form, 
+      createdAt: now,
+      updatedAt: now 
+    } as any).returning();
+    return result[0] as PopupForm;
+  }
+
+  async updatePopupForm(id: string, form: Partial<InsertPopupForm>): Promise<PopupForm | undefined> {
+    const result = await db.update(popupFormsTable)
+      .set({ ...form, updatedAt: new Date() } as any)
+      .where(eq(popupFormsTable.id, id))
+      .returning();
+    return result[0] as PopupForm | undefined;
+  }
+
+  async deletePopupForm(id: string): Promise<boolean> {
+    await db.delete(popupFormsTable).where(eq(popupFormsTable.id, id));
+    return true;
   }
 }
