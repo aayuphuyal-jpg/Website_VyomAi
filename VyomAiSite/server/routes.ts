@@ -999,6 +999,73 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
     }
   });
 
+  // Popup Forms Routes
+  app.get("/api/popup-forms", async (req, res) => {
+    try {
+      const forms = await storage.getPopupForms();
+      res.json(forms);
+    } catch (error) {
+      console.error("Popup forms fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch popup forms" });
+    }
+  });
+
+  app.get("/api/popup-forms/active", async (req, res) => {
+    try {
+      const form = await storage.getActivePopupForm();
+      res.json(form || null);
+    } catch (error) {
+      console.error("Active popup form fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch active popup form" });
+    }
+  });
+
+  app.get("/api/popup-forms/:id", async (req, res) => {
+    try {
+      const form = await storage.getPopupForm(req.params.id);
+      if (!form) {
+        return res.status(404).json({ error: "Popup form not found" });
+      }
+      res.json(form);
+    } catch (error) {
+      console.error("Popup form fetch error:", error);
+      res.status(500).json({ error: "Failed to fetch popup form" });
+    }
+  });
+
+  app.post("/api/admin/popup-forms", authMiddleware, async (req, res) => {
+    try {
+      const form = await storage.createPopupForm(req.body);
+      res.status(201).json(form);
+    } catch (error) {
+      console.error("Popup form create error:", error);
+      res.status(500).json({ error: "Failed to create popup form" });
+    }
+  });
+
+  app.put("/api/admin/popup-forms/:id", authMiddleware, async (req, res) => {
+    try {
+      const form = await storage.updatePopupForm(req.params.id, req.body);
+      if (!form) {
+        return res.status(404).json({ error: "Popup form not found" });
+      }
+      res.json(form);
+    } catch (error) {
+      console.error("Popup form update error:", error);
+      res.status(500).json({ error: "Failed to update popup form" });
+    }
+  });
+
+  app.delete("/api/admin/popup-forms/:id", authMiddleware, async (req, res) => {
+    try {
+      await storage.deletePopupForm(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Popup form delete error:", error);
+      res.status(500).json({ error: "Failed to delete popup form" });
+    }
+  });
+
   // Exchange rates routes
   app.get("/api/exchange-rates", async (req, res) => {
     try {

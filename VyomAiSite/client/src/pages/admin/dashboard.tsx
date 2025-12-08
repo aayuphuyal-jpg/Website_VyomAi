@@ -67,32 +67,37 @@ export function AdminDashboard() {
       trend: "up"
     },
     { 
-      title: "Active Bookings", 
-      value: bookings.filter(b => b.status === "ongoing" || b.status === "open").length, 
-      icon: Calendar, 
+      title: "Communications", 
+      value: bookings.length + inquiries.length, 
+      icon: MessageSquare, 
       color: "bg-purple-500",
       lightColor: "bg-purple-50",
       textColor: "text-purple-600",
-      change: `${bookings.length} total`,
+      change: `${bookings.length} bookings, ${inquiries.length} inquiries`,
       trend: "neutral"
     },
     { 
-      title: "New Inquiries", 
-      value: inquiries.filter(i => i.status === "new").length, 
-      icon: MessageSquare, 
+      title: "Pending Actions", 
+      value: bookings.filter(b => b.status === "open" || b.status === "created" || b.status === "pending").length + 
+        inquiries.filter(i => i.status === "new" || i.status === "pending").length, 
+      icon: Calendar, 
       color: "bg-orange-500",
       lightColor: "bg-orange-50",
       textColor: "text-orange-600",
-      change: `${inquiries.length} total`,
+      change: "Needs attention",
       trend: "neutral"
     },
   ];
+
+  const totalCommunications = bookings.length + inquiries.length;
+  const pendingCommunications = bookings.filter(b => b.status === "open" || b.status === "created" || b.status === "pending").length + 
+    inquiries.filter(i => i.status === "new" || i.status === "pending").length;
 
   const quickLinks = [
     { label: "Articles", value: articles.length, icon: FileText, href: "/admin/articles", color: "text-blue-600" },
     { label: "Team Members", value: team.filter(t => t.enabled).length, icon: Users, href: "/admin/team", color: "text-green-600" },
     { label: "Pricing Plans", value: pricing.filter(p => p.enabled).length, icon: DollarSign, href: "/admin/pricing", color: "text-purple-600" },
-    { label: "Total Bookings", value: bookings.length, icon: Calendar, href: "/admin/bookings", color: "text-orange-600" },
+    { label: "Communications", value: totalCommunications, icon: MessageSquare, href: "/admin/communications", color: "text-orange-600" },
   ];
 
   return (

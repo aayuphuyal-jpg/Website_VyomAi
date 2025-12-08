@@ -18,11 +18,6 @@ import {
 export function SettingsPage() {
   const { toast } = useToast();
   
-  const [footerEmail, setFooterEmail] = useState("info@vyomai.cloud");
-  const [footerMobile, setFooterMobile] = useState("");
-  const [footerAddress, setFooterAddress] = useState("Tokha, Kathmandu, Nepal");
-  const [publishFooter, setPublishFooter] = useState(false);
-  
   const [popupEnabled, setPopupEnabled] = useState(false);
   const [popupTitle, setPopupTitle] = useState("Welcome to VyomAi");
   const [popupMessage, setPopupMessage] = useState("Experience the future of AI solutions. Let us transform your business with intelligent automation.");
@@ -37,10 +32,6 @@ export function SettingsPage() {
   });
 
   useEffect(() => {
-    if (settings?.footerContactEmail) setFooterEmail(settings.footerContactEmail);
-    if (settings?.footerMobileNumber) setFooterMobile(settings.footerMobileNumber);
-    if (settings?.footerAddress) setFooterAddress(settings.footerAddress);
-    if (settings?.publishFooter !== undefined) setPublishFooter(settings.publishFooter);
     if (settings?.welcomePopupEnabled !== undefined) setPopupEnabled(settings.welcomePopupEnabled);
     if (settings?.welcomePopupTitle) setPopupTitle(settings.welcomePopupTitle);
     if (settings?.welcomePopupMessage) setPopupMessage(settings.welcomePopupMessage);
@@ -77,10 +68,6 @@ export function SettingsPage() {
 
   const handleSaveAll = () => {
     updateSettingsMutation.mutate({
-      footerContactEmail: footerEmail,
-      footerMobileNumber: footerMobile,
-      footerAddress: footerAddress,
-      publishFooter,
       welcomePopupEnabled: popupEnabled,
       welcomePopupTitle: popupTitle,
       welcomePopupMessage: popupMessage,
@@ -307,51 +294,6 @@ export function SettingsPage() {
                   </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900">Footer Settings</CardTitle>
-            <CardDescription className="text-gray-500">
-              Configure footer contact information
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-              <Switch
-                checked={publishFooter}
-                onCheckedChange={setPublishFooter}
-              />
-              <Label className="text-gray-700 cursor-pointer">Publish Footer to Website</Label>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-gray-700 mb-2 block">Contact Email</Label>
-                <Input 
-                  value={footerEmail}
-                  onChange={(e) => setFooterEmail(e.target.value)}
-                  type="email"
-                />
-              </div>
-              <div>
-                <Label className="text-gray-700 mb-2 block">Mobile Number</Label>
-                <Input 
-                  value={footerMobile}
-                  onChange={(e) => setFooterMobile(e.target.value)}
-                  type="tel"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-gray-700 mb-2 block">Address</Label>
-              <Input 
-                value={footerAddress}
-                onChange={(e) => setFooterAddress(e.target.value)}
-              />
             </div>
           </CardContent>
         </Card>

@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { 
   LogOut, BarChart3, FileText, Users, DollarSign, BookOpen, MessageSquare, Settings, 
-  Home, Share2, Mail, Menu, X, ChevronRight
+  Home, Share2, Mail, Menu, X, ChevronRight, Sparkles
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -52,8 +52,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       title: "Business",
       items: [
         { label: "Pricing Plans", href: "/admin/pricing", icon: DollarSign },
-        { label: "Bookings", href: "/admin/bookings", icon: BookOpen, badge: "3" },
-        { label: "Inquiries", href: "/admin/inquiries", icon: MessageSquare },
+        { label: "Communications", href: "/admin/communications", icon: MessageSquare },
       ],
     },
     {
@@ -66,6 +65,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     {
       title: "System",
       items: [
+        { label: "Popup Forms", href: "/admin/popup-forms", icon: Sparkles },
         { label: "Settings", href: "/admin/settings", icon: Settings },
       ],
     },

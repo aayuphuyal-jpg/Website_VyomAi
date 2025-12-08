@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Plus, Trash2, Edit, Save, Loader2, GripVertical, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -111,11 +111,12 @@ export function HomepageContentPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="hero">Hero Section</TabsTrigger>
           <TabsTrigger value="about">About Section</TabsTrigger>
           <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="solutions">Solutions</TabsTrigger>
+          <TabsTrigger value="footer">Footer</TabsTrigger>
         </TabsList>
 
         <TabsContent value="hero">
@@ -132,6 +133,10 @@ export function HomepageContentPage() {
 
         <TabsContent value="solutions">
           <SolutionsSection />
+        </TabsContent>
+
+        <TabsContent value="footer">
+          <FooterSection />
         </TabsContent>
       </Tabs>
     </div>
@@ -1402,5 +1407,112 @@ function SolutionsSection() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function FooterSection() {
+  const { toast } = useToast();
+  const [email, setEmail] = useState("");
+  const [mobile, setMobile] = useState("");
+  const [address, setAddress] = useState("");
+  const [publishFooter, setPublishFooter] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  const { data: settings, isLoading } = useQuery<any>({
+    queryKey: ["/api/settings"],
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const token = localStorage.getItem("vyomai-admin-token");
+      return apiRequest("PUT", "/api/admin/settings", data, { Authorization: `Bearer ${token}` });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      toast({ title: "Footer settings saved successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to save footer settings", variant: "destructive" });
+    },
+  });
+
+  useEffect(() => {
+    if (settings && !initialized) {
+      setEmail(settings.footerContactEmail || "info@vyomai.cloud");
+      setMobile(settings.footerMobileNumber || "");
+      setAddress(settings.footerAddress || "Tokha, Kathmandu, Nepal");
+      setPublishFooter(settings.publishFooter ?? false);
+      setInitialized(true);
+    }
+  }, [settings, initialized]);
+
+  if (isLoading) {
+    return <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+  }
+
+  const handleSave = () => {
+    updateMutation.mutate({
+      footerContactEmail: email,
+      footerMobileNumber: mobile,
+      footerAddress: address,
+      publishFooter,
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Footer Settings</CardTitle>
+        <CardDescription>Configure the footer contact information and visibility</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="flex items-center justify-between rounded-lg border p-3">
+          <div>
+            <p className="font-medium">Publish Footer</p>
+            <p className="text-sm text-muted-foreground">Show footer on the website</p>
+          </div>
+          <Switch
+            checked={publishFooter}
+            onCheckedChange={setPublishFooter}
+          />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Contact Email</label>
+            <Input 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
+              placeholder="info@vyomai.cloud"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Mobile Number</label>
+            <Input 
+              value={mobile}
+              onChange={(e) => setMobile(e.target.value)}
+              type="tel"
+              placeholder="+977 9800000000"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Address</label>
+          <Input 
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Tokha, Kathmandu, Nepal"
+          />
+        </div>
+
+        <Button onClick={handleSave} disabled={updateMutation.isPending}>
+          {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Save className="mr-2 h-4 w-4" />
+          Save Footer Settings
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
