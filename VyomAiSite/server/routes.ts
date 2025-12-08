@@ -716,14 +716,23 @@ Always maintain a balance between being professional and approachable. Reference
   });
 
   // Generic send email endpoint for admin
+  const sendEmailSchema = z.object({
+    to: z.string().email("Valid email address required"),
+    subject: z.string().min(1, "Subject is required"),
+    message: z.string().min(1, "Message is required"),
+    type: z.enum(["booking_response", "inquiry_response", "general"]).optional(),
+  });
+  
   app.post("/api/admin/send-email", authMiddleware, async (req, res) => {
     try {
       const { sendEmailWithResult } = await import("./email-service");
-      const { to, subject, message, type } = req.body;
       
-      if (!to || !subject || !message) {
-        return res.status(400).json({ error: "To, subject, and message are required" });
+      const validation = sendEmailSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: validation.error.errors[0]?.message || "Invalid input" });
       }
+      
+      const { to, subject, message } = validation.data;
       
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
