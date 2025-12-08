@@ -128,6 +128,14 @@ export const siteSettingsSchema = z.object({
   exchangeRatesUpdatedAt: z.string().optional(),
   // Default currency for pricing display
   defaultCurrency: z.enum(["USD", "EUR", "INR", "NPR"]).optional().default("NPR"),
+  // Welcome Popup Settings
+  welcomePopupEnabled: z.boolean().optional().default(false),
+  welcomePopupTitle: z.string().optional().default("Welcome to VyomAi"),
+  welcomePopupMessage: z.string().optional().default("Experience the future of AI solutions"),
+  welcomePopupImageUrl: z.string().optional(),
+  welcomePopupButtonText: z.string().optional().default("Explore Now"),
+  welcomePopupAnimationStyle: z.enum(["fade", "slide", "zoom", "glow"]).optional().default("fade"),
+  welcomePopupDismissable: z.boolean().optional().default(true),
 });
 
 export type SiteSettings = z.infer<typeof siteSettingsSchema>;
@@ -442,6 +450,14 @@ export const siteSettingsTable = pgTable("site_settings", {
   exchangeRates: text("exchange_rates").default('{"USD":1,"EUR":0.92,"INR":83.12,"NPR":132.5}'),
   exchangeRatesUpdatedAt: varchar("exchange_rates_updated_at"),
   defaultCurrency: varchar("default_currency").default("NPR"),
+  // Welcome Popup Settings
+  welcomePopupEnabled: boolean("welcome_popup_enabled").default(false),
+  welcomePopupTitle: varchar("welcome_popup_title").default("Welcome to VyomAi"),
+  welcomePopupMessage: text("welcome_popup_message").default("Experience the future of AI solutions"),
+  welcomePopupImageUrl: varchar("welcome_popup_image_url"),
+  welcomePopupButtonText: varchar("welcome_popup_button_text").default("Explore Now"),
+  welcomePopupAnimationStyle: varchar("welcome_popup_animation_style").default("fade"),
+  welcomePopupDismissable: boolean("welcome_popup_dismissable").default(true),
 });
 
 export const visitorStatsTable = pgTable("visitor_stats", {
