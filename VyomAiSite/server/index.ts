@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -37,7 +38,7 @@ app.use(
 // Rate limiting for login endpoint
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
+  max: 20, // 20 attempts per window
   message: "Too many login attempts, please try again later",
   standardHeaders: true,
   legacyHeaders: false,
@@ -58,6 +59,32 @@ app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 app.post("/api/admin/login", loginLimiter, (req, res, next) => {
   next();
 });
+
+// Session configuration for persistent auth across serverless invocations
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
+
+const PgSession = connectPgSimple(session);
+
+app.use(
+  session({
+    store: pool ? new PgSession({
+      pool: pool,
+      tableName: "session",
+      createTableIfMissing: true,
+    }) : undefined,
+    secret: process.env.SESSION_SECRET || "dev_secret_key_123",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
+
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -121,15 +148,27 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
+
+  // Only start the server if not in Vercel (Vercel handles this)
+  if (process.env.VERCEL !== "1") {
+    const port = parseInt(process.env.PORT || "5000", 10);
+    httpServer.listen(
+      {
+        port,
+        host: "0.0.0.0",
+      },
+      () => {
+        log(`serving on port ${port}`);
+
+        // Initialize social media auto-sync scheduler
+        import('./social-media-sync-scheduler').then(({ initializeAutoSync }) => {
+          initializeAutoSync().catch(err => console.error('Failed to initialize auto-sync:', err));
+        }).catch(err => console.error('Failed to load auto-sync scheduler:', err));
+      },
+    );
+  }
 })();
+
+// Export for Vercel serverless
+export { app };
+

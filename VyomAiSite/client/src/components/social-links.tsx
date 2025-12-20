@@ -10,28 +10,38 @@ export function SocialLinks({ size = "default" }: { size?: "default" | "lg" }) {
   });
 
   const { data: integrations = [] } = useQuery<any[]>({
-    queryKey: ["/api/admin/integrations"],
+    queryKey: ["/api/integrations"],
   });
 
-  const isConnected = (platform: string) => {
-    return integrations.find((i: any) => i.platform === platform)?.isConnected ?? false;
-  };
-
   const getSocialLinks = () => {
-    const links = [
-      { icon: SiLinkedin, href: settings?.socialLinks?.linkedin || "#", label: "LinkedIn", platform: "linkedin", color: "hover:text-blue-500" },
-      { icon: SiInstagram, href: settings?.socialLinks?.instagram || "#", label: "Instagram", platform: "instagram", color: "hover:text-pink-500" },
-      { icon: SiFacebook, href: settings?.socialLinks?.facebook || "#", label: "Facebook", platform: "facebook", color: "hover:text-blue-600" },
-      { icon: SiWhatsapp, href: settings?.socialLinks?.whatsapp || "#", label: "WhatsApp", platform: "whatsapp", color: "hover:text-green-500" },
-      { icon: SiYoutube, href: settings?.socialLinks?.youtube || "#", label: "YouTube", platform: "youtube", color: "hover:text-red-500" },
-      { icon: Phone, href: settings?.socialLinks?.viber || "#", label: "Viber", platform: "viber", color: "hover:text-purple-500" },
-    ];
-    return links.filter(link => link.href !== "#" && isConnected(link.platform));
+    // integrations is already filtered by isPublished on the backend
+    return integrations.map(i => {
+      const platformInfo: any = {
+        linkedin: { icon: SiLinkedin, label: "LinkedIn", color: "hover:text-blue-500" },
+        instagram: { icon: SiInstagram, label: "Instagram", color: "hover:text-pink-500" },
+        facebook: { icon: SiFacebook, label: "Facebook", color: "hover:text-blue-600" },
+        whatsapp: { icon: SiWhatsapp, label: "WhatsApp", color: "hover:text-green-500" },
+        youtube: { icon: SiYoutube, label: "YouTube", color: "hover:text-red-500" },
+        viber: { icon: Phone, label: "Viber", color: "hover:text-purple-500" },
+      };
+
+      const info = platformInfo[i.platform];
+      if (!info) return null;
+
+      const href = settings?.socialLinks?.[i.platform as keyof typeof settings.socialLinks] || i.profileUrl;
+      if (!href) return null;
+
+      return {
+        ...info,
+        href,
+        platform: i.platform
+      };
+    }).filter(Boolean);
   };
 
   const iconSize = size === "lg" ? "w-5 h-5" : "w-4 h-4";
   const socialLinks = getSocialLinks();
-  
+
   return (
     <div className="flex items-center gap-1" data-testid="social-links">
       {socialLinks.map((link) => (

@@ -14,6 +14,7 @@ import { HomepageContentPage } from "@/pages/admin/homepage-content";
 import { UsersPage } from "@/pages/admin/users";
 import SocialMediaAdmin from "@/pages/admin/social-media";
 import EmailSettingsAdmin from "@/pages/admin/email-settings";
+import { SocialMediaIntegrationPage } from "@/pages/admin/social-media-integration";
 
 function LoadingSpinner() {
   return (
@@ -35,9 +36,6 @@ export default function AdminDashboardRouter() {
 
   return (
     <Switch>
-      <Route path="/admin/social-media">
-        <SocialMediaAdmin />
-      </Route>
       <Route path="/admin/email-settings">
         <EmailSettingsAdmin />
       </Route>
@@ -53,6 +51,8 @@ export default function AdminDashboardRouter() {
             <Route path="/admin/inquiries" component={InquiriesPage} />
             <Route path="/admin/communications" component={CommunicationsPage} />
             <Route path="/admin/users" component={UsersPage} />
+            <Route path="/admin/social-media-integration" component={SocialMediaIntegrationPage} />
+            <Route path="/admin/social-media" component={SocialMediaIntegrationPage} />
             <Route path="/admin/popup-forms" component={PopupFormsPage} />
             <Route path="/admin/settings" component={SettingsPage} />
             <Route path="/admin" component={AdminDashboard} />

@@ -1,12 +1,18 @@
 import { db } from "./db";
-import { 
-  usersTable, articlesTable, teamMembersTable, pricingPackagesTable, 
-  projectDiscussionTable, bookingRequestsTable, siteSettingsTable, 
+import {
+  usersTable, articlesTable, teamMembersTable, pricingPackagesTable,
+  projectDiscussionTable, bookingRequestsTable, siteSettingsTable,
   visitorStatsTable, socialMediaAnalyticsTable, socialMediaIntegrationsTable,
-  oneTimePricingRequestsTable, customerInquiriesTable, popupFormsTable
+  oneTimePricingRequestsTable, customerInquiriesTable, popupFormsTable,
+  heroContentTable, aboutContentTable, aboutValuesTable, servicesContentTable,
+  serviceItemsTable, solutionsContentTable, solutionItemsTable,
+  socialMediaSyncLogsTable, socialMediaApiConfigTable
 } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { type User, type InsertUser, type Article, type InsertArticle, type SiteSettings, type VisitorStats, type TeamMember, type InsertTeamMember, type PricingPackage, type InsertPricingPackage, type ProjectDiscussion, type InsertProjectDiscussion, type BookingRequest, type InsertBookingRequest, type SocialMediaAnalytics, type InsertSocialMediaAnalytics, type SocialMediaIntegration, type InsertSocialMediaIntegration, type OneTimePricingRequest, type InsertOneTimePricingRequest, type CustomerInquiry, type InsertCustomerInquiry, type PopupForm, type InsertPopupForm } from "@shared/schema";
+import {
+  type User, type InsertUser, type Article, type InsertArticle, type SiteSettings, type VisitorStats, type TeamMember, type InsertTeamMember, type PricingPackage, type InsertPricingPackage, type ProjectDiscussion, type InsertProjectDiscussion, type BookingRequest, type InsertBookingRequest, type SocialMediaAnalytics, type InsertSocialMediaAnalytics, type SocialMediaIntegration, type InsertSocialMediaIntegration, type OneTimePricingRequest, type InsertOneTimePricingRequest, type CustomerInquiry, type InsertCustomerInquiry, type PopupForm, type InsertPopupForm,
+  type HeroContent, type InsertHeroContent, type AboutContent, type InsertAboutContent, type AboutValue, type InsertAboutValue, type ServicesContent, type InsertServicesContent, type ServiceItem, type InsertServiceItem, type SolutionsContent, type InsertSolutionsContent, type SolutionItem, type InsertSolutionItem
+} from "@shared/schema";
 import { randomUUID } from "crypto";
 import bcryptjs from "bcryptjs";
 
@@ -16,16 +22,16 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPassword(id: string, hashedPassword: string): Promise<User | undefined>;
-  
+
   getArticles(): Promise<Article[]>;
   getArticle(id: string): Promise<Article | undefined>;
   createArticle(article: InsertArticle): Promise<Article>;
   updateArticle(id: string, article: Partial<InsertArticle>): Promise<Article | undefined>;
   deleteArticle(id: string): Promise<boolean>;
-  
+
   getSettings(): Promise<SiteSettings>;
   updateSettings(settings: Partial<SiteSettings>): Promise<SiteSettings>;
-  
+
   getVisitorStats(): Promise<VisitorStats>;
   incrementVisitors(): Promise<VisitorStats>;
   resetHourlyData(): Promise<VisitorStats>;
@@ -35,33 +41,33 @@ export interface IStorage {
   resetEngagementMetrics(): Promise<VisitorStats>;
   resetSocialMediaStats(): Promise<VisitorStats>;
   resetTotalVisitors(): Promise<VisitorStats>;
-  
+
   getTeamMembers(): Promise<TeamMember[]>;
   getTeamMember(id: string): Promise<TeamMember | undefined>;
   createTeamMember(member: InsertTeamMember): Promise<TeamMember>;
   updateTeamMember(id: string, member: Partial<InsertTeamMember>): Promise<TeamMember | undefined>;
   deleteTeamMember(id: string): Promise<boolean>;
-  
+
   getPricingPackages(): Promise<PricingPackage[]>;
   getPricingPackage(id: string): Promise<PricingPackage | undefined>;
   createPricingPackage(pkg: InsertPricingPackage): Promise<PricingPackage>;
   updatePricingPackage(id: string, pkg: Partial<InsertPricingPackage>): Promise<PricingPackage | undefined>;
   deletePricingPackage(id: string): Promise<boolean>;
-  
+
   getProjectDiscussion(): Promise<ProjectDiscussion | undefined>;
   updateProjectDiscussion(data: InsertProjectDiscussion): Promise<ProjectDiscussion>;
-  
+
   getBookingRequests(): Promise<BookingRequest[]>;
   createBookingRequest(booking: InsertBookingRequest): Promise<BookingRequest>;
   updateBookingRequest(id: string, booking: Partial<InsertBookingRequest>): Promise<BookingRequest | undefined>;
   deleteBookingRequest(id: string): Promise<boolean>;
   resetBookingRequests(): Promise<void>;
-  
+
   getOneTimePricingRequests(): Promise<OneTimePricingRequest[]>;
   createOneTimePricingRequest(request: InsertOneTimePricingRequest): Promise<OneTimePricingRequest>;
   updateOneTimePricingRequest(id: string, request: Partial<InsertOneTimePricingRequest>): Promise<OneTimePricingRequest | undefined>;
   deleteOneTimePricingRequest(id: string): Promise<boolean>;
-  
+
   getSocialMediaAnalytics(): Promise<SocialMediaAnalytics[]>;
   getSocialMediaAnalytic(platform: string): Promise<SocialMediaAnalytics | undefined>;
   updateSocialMediaAnalytics(platform: string, data: Partial<InsertSocialMediaAnalytics>): Promise<SocialMediaAnalytics>;
@@ -70,14 +76,51 @@ export interface IStorage {
   getSocialMediaIntegrations(): Promise<SocialMediaIntegration[]>;
   getSocialMediaIntegration(platform: string): Promise<SocialMediaIntegration | undefined>;
   updateSocialMediaIntegration(platform: string, data: Partial<InsertSocialMediaIntegration>): Promise<SocialMediaIntegration>;
-  
+
   getCustomerInquiries(): Promise<CustomerInquiry[]>;
   createCustomerInquiry(inquiry: InsertCustomerInquiry): Promise<CustomerInquiry>;
   updateCustomerInquiry(id: string, inquiry: Partial<InsertCustomerInquiry>): Promise<CustomerInquiry | undefined>;
   deleteCustomerInquiry(id: string): Promise<boolean>;
-  
+
   storeResetCode(email: string, code: string): Promise<void>;
   verifyResetCode(email: string, code: string): Promise<boolean>;
+
+  // Home Page Content Management
+  getHeroContent(): Promise<HeroContent | undefined>;
+  updateHeroContent(data: Partial<InsertHeroContent>): Promise<HeroContent>;
+
+  getAboutContent(): Promise<AboutContent | undefined>;
+  updateAboutContent(data: Partial<InsertAboutContent>): Promise<AboutContent>;
+
+  getAboutValues(): Promise<AboutValue[]>;
+  createAboutValue(value: InsertAboutValue): Promise<AboutValue>;
+  updateAboutValue(id: string, value: Partial<InsertAboutValue>): Promise<AboutValue | undefined>;
+  deleteAboutValue(id: string): Promise<boolean>;
+
+  getServicesContent(): Promise<ServicesContent | undefined>;
+  updateServicesContent(data: Partial<InsertServicesContent>): Promise<ServicesContent>;
+
+  getServiceItems(): Promise<ServiceItem[]>;
+  createServiceItem(item: InsertServiceItem): Promise<ServiceItem>;
+  updateServiceItem(id: string, item: Partial<InsertServiceItem>): Promise<ServiceItem | undefined>;
+  deleteServiceItem(id: string): Promise<boolean>;
+
+  getSolutionsContent(): Promise<SolutionsContent | undefined>;
+  updateSolutionsContent(data: Partial<InsertSolutionsContent>): Promise<SolutionsContent>;
+
+  getSolutionItems(): Promise<SolutionItem[]>;
+  createSolutionItem(item: InsertSolutionItem): Promise<SolutionItem>;
+  updateSolutionItem(id: string, item: Partial<InsertSolutionItem>): Promise<SolutionItem | undefined>;
+  deleteSolutionItem(id: string): Promise<boolean>;
+
+  // Social Media Auto-Sync Management
+  getSocialMediaSyncLogs(platform?: string, limit?: number): Promise<any[]>;
+  createSocialMediaSyncLog(log: any): Promise<any>;
+
+  getSocialMediaApiConfigs(): Promise<any[]>;
+  getSocialMediaApiConfig(platform: string): Promise<any | undefined>;
+  updateSocialMediaApiConfig(platform: string, config: any): Promise<any>;
+  deleteSocialMediaApiConfig(platform: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -92,7 +135,7 @@ export class DatabaseStorage implements IStorage {
       const adminUsername = process.env.ADMIN_USERNAME || "admin";
       const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
       const adminEmail = process.env.ADMIN_EMAIL || "shekhar@vyomai.cloud";
-      
+
       const existingAdmin = await this.getUserByUsername(adminUsername);
       if (!existingAdmin) {
         const hashedPassword = bcryptjs.hashSync(adminPassword, 10);
@@ -205,11 +248,11 @@ export class DatabaseStorage implements IStorage {
       const id = randomUUID();
       const user: User = { ...insertUser, id, password: insertUser.password };
       const result = await db.insert(usersTable).values(user).returning();
-      
+
       if (!result || result.length === 0) {
         throw new Error("Database returned empty result for user creation");
       }
-      
+
       const created = result[0] as User;
       return created;
     } catch (error) {
@@ -344,7 +387,7 @@ export class DatabaseStorage implements IStorage {
       } else if (Array.isArray(pkg.features)) {
         features = pkg.features;
       }
-      
+
       return {
         ...pkg,
         features,
@@ -359,7 +402,7 @@ export class DatabaseStorage implements IStorage {
   async getPricingPackage(id: string): Promise<PricingPackage | undefined> {
     const pkg = await db.select().from(pricingPackagesTable).where(eq(pricingPackagesTable.id, id)).limit(1);
     if (!pkg[0]) return undefined;
-    
+
     let features: string[] = [];
     if (typeof pkg[0].features === 'string') {
       try {
@@ -379,7 +422,7 @@ export class DatabaseStorage implements IStorage {
     } else if (Array.isArray(pkg[0].features)) {
       features = pkg[0].features;
     }
-    
+
     return {
       ...pkg[0],
       features,
@@ -393,18 +436,18 @@ export class DatabaseStorage implements IStorage {
   async createPricingPackage(pkg: InsertPricingPackage): Promise<PricingPackage> {
     const id = randomUUID();
     const now = new Date();
-    const result = await db.insert(pricingPackagesTable).values({ 
-      id, 
-      ...pkg, 
+    const result = await db.insert(pricingPackagesTable).values({
+      id,
+      ...pkg,
       features: JSON.stringify(pkg.features),
       price: String(pkg.price),
       monthlyPrice: pkg.monthlyPrice ? String(pkg.monthlyPrice) : null,
       yearlyPrice: pkg.yearlyPrice ? String(pkg.yearlyPrice) : null,
-      createdAt: now 
+      createdAt: now
     }).returning();
-    
+
     if (!result || result.length === 0) throw new Error("Pricing package creation failed");
-    
+
     const created = result[0];
     return {
       ...created,
@@ -468,7 +511,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBookingRequests(): Promise<BookingRequest[]> {
-    return db.select().from(bookingRequestsTable) as Promise<BookingRequest[]>;
+    if (!db) return [];
+    return db.select().from(bookingRequestsTable) as any;
   }
 
   async createBookingRequest(booking: InsertBookingRequest): Promise<BookingRequest> {
@@ -499,11 +543,11 @@ export class DatabaseStorage implements IStorage {
   async createOneTimePricingRequest(request: InsertOneTimePricingRequest): Promise<OneTimePricingRequest> {
     const id = randomUUID();
     const now = new Date();
-    const result = await db.insert(oneTimePricingRequestsTable).values({ 
-      id, 
-      ...request, 
+    const result = await db.insert(oneTimePricingRequestsTable).values({
+      id,
+      ...request,
       estimatedPrice: String(request.estimatedPrice),
-      createdAt: now 
+      createdAt: now
     }).returning();
     return {
       ...result[0],
@@ -544,12 +588,12 @@ export class DatabaseStorage implements IStorage {
   async updateSettings(settings: Partial<SiteSettings>): Promise<SiteSettings> {
     try {
       const existing = await this.getSettings();
-      
+
       const dataToSave: any = { ...settings };
       if (settings.socialLinks && typeof settings.socialLinks === 'object') {
         dataToSave.socialLinks = JSON.stringify(settings.socialLinks);
       }
-      
+
       if (existing && existing.id) {
         const result = await db.update(siteSettingsTable).set(dataToSave).where(eq(siteSettingsTable.id, existing.id)).returning();
         if (!result[0]) {
@@ -561,7 +605,7 @@ export class DatabaseStorage implements IStorage {
           socialLinks: typeof updated.socialLinks === 'string' ? JSON.parse(updated.socialLinks) : updated.socialLinks,
         } as SiteSettings;
       }
-      
+
       // Create new record with defaults for required fields
       const id = randomUUID();
       const newSettings = {
@@ -575,7 +619,7 @@ export class DatabaseStorage implements IStorage {
         socialLinks: dataToSave.socialLinks || JSON.stringify({}),
         ...dataToSave,
       };
-      
+
       const result = await db.insert(siteSettingsTable).values(newSettings).returning();
       if (!result[0]) {
         throw new Error("Insert returned no results");
@@ -615,7 +659,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const existing = await db.select().from(visitorStatsTable).limit(1);
       const updateData: any = {};
-      
+
       if (data.totalVisitors !== undefined) updateData.totalVisitors = String(data.totalVisitors);
       if (data.todayVisitors !== undefined) updateData.todayVisitors = String(data.todayVisitors);
       if (data.hourlyData !== undefined) updateData.hourlyData = JSON.stringify(data.hourlyData);
@@ -684,36 +728,6 @@ export class DatabaseStorage implements IStorage {
     return this.updateVisitorStats({ totalVisitors: 0, todayVisitors: 0 });
   }
 
-  async getSocialMediaAnalytics(): Promise<SocialMediaAnalytics[]> {
-    return db.select().from(socialMediaAnalyticsTable) as Promise<SocialMediaAnalytics[]>;
-  }
-
-  async getSocialMediaAnalytic(platform: string): Promise<SocialMediaAnalytics | undefined> {
-    const result = await db.select().from(socialMediaAnalyticsTable).where(eq(socialMediaAnalyticsTable.platform, platform)).limit(1);
-    return result[0] as SocialMediaAnalytics | undefined;
-  }
-
-  async updateSocialMediaAnalytics(platform: string, data: Partial<InsertSocialMediaAnalytics>): Promise<SocialMediaAnalytics> {
-    const existing = await this.getSocialMediaAnalytic(platform);
-    if (existing) {
-      const result = await db.update(socialMediaAnalyticsTable).set(data).where(eq(socialMediaAnalyticsTable.platform, platform)).returning();
-      return result[0] as SocialMediaAnalytics;
-    }
-    const id = randomUUID();
-    const insertData = {
-      id,
-      platform,
-      engagementRate: data.engagementRate || "0",
-      followersCount: data.followersCount || "0",
-      postsCount: data.postsCount || "0",
-      impressions: data.impressions || "0",
-      likes: data.likes || "0",
-      shares: data.shares || "0",
-      comments: data.comments || "0",
-    };
-    const result = await db.insert(socialMediaAnalyticsTable).values(insertData as any).returning();
-    return result[0] as SocialMediaAnalytics;
-  }
 
   async resetSocialMediaAnalytics(): Promise<void> {
     await db.delete(socialMediaAnalyticsTable);
@@ -725,12 +739,18 @@ export class DatabaseStorage implements IStorage {
 
   async getSocialMediaIntegration(platform: string): Promise<SocialMediaIntegration | undefined> {
     const result = await db.select().from(socialMediaIntegrationsTable).where(eq(socialMediaIntegrationsTable.platform, platform)).limit(1);
-    return result[0] as SocialMediaIntegration | undefined;
+    if (!result[0]) return undefined;
+    return {
+      ...result[0],
+      createdAt: result[0].createdAt ? (typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()) : undefined,
+      updatedAt: result[0].updatedAt ? (typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()) : undefined,
+    } as any;
   }
 
   async updateSocialMediaIntegration(platform: string, data: Partial<InsertSocialMediaIntegration>): Promise<SocialMediaIntegration> {
     const existing = await this.getSocialMediaIntegration(platform);
     if (existing) {
+      if (!db) throw new Error("Database not initialized");
       const result = await db.update(socialMediaIntegrationsTable).set({ ...data, updatedAt: new Date() } as any).where(eq(socialMediaIntegrationsTable.platform, platform)).returning();
       return result[0] as SocialMediaIntegration;
     }
@@ -741,6 +761,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCustomerInquiries(): Promise<CustomerInquiry[]> {
+    if (!db) return [];
     return db.select().from(customerInquiriesTable) as Promise<CustomerInquiry[]>;
   }
 
@@ -804,11 +825,11 @@ export class DatabaseStorage implements IStorage {
   async createPopupForm(form: InsertPopupForm): Promise<PopupForm> {
     const id = randomUUID();
     const now = new Date();
-    const result = await db.insert(popupFormsTable).values({ 
-      id, 
-      ...form, 
+    const result = await db.insert(popupFormsTable).values({
+      id,
+      ...form,
       createdAt: now,
-      updatedAt: now 
+      updatedAt: now
     } as any).returning();
     return result[0] as PopupForm;
   }
@@ -824,5 +845,373 @@ export class DatabaseStorage implements IStorage {
   async deletePopupForm(id: string): Promise<boolean> {
     await db.delete(popupFormsTable).where(eq(popupFormsTable.id, id));
     return true;
+  }
+
+  // Home Page Content Methods
+
+  // Hero Content
+  async getHeroContent(): Promise<HeroContent | undefined> {
+    const result = await db.select().from(heroContentTable).limit(1);
+    return result[0] as HeroContent | undefined;
+  }
+
+  async updateHeroContent(data: Partial<InsertHeroContent>): Promise<HeroContent> {
+    const existing = await this.getHeroContent();
+    if (existing) {
+      const result = await db.update(heroContentTable).set({ ...data, updatedAt: new Date() }).where(eq(heroContentTable.id, existing.id)).returning();
+      return result[0] as HeroContent;
+    }
+    const id = randomUUID();
+    const result = await db.insert(heroContentTable).values({ id, ...data, updatedAt: new Date() } as any).returning();
+    return result[0] as HeroContent;
+  }
+
+  // About Content
+  async getAboutContent(): Promise<AboutContent | undefined> {
+    const result = await db.select().from(aboutContentTable).limit(1);
+    return result[0] as AboutContent | undefined;
+  }
+
+  async updateAboutContent(data: Partial<InsertAboutContent>): Promise<AboutContent> {
+    const existing = await this.getAboutContent();
+    if (existing) {
+      const result = await db.update(aboutContentTable).set({ ...data, updatedAt: new Date() }).where(eq(aboutContentTable.id, existing.id)).returning();
+      return result[0] as AboutContent;
+    }
+    const id = randomUUID();
+    const result = await db.insert(aboutContentTable).values({ id, ...data, updatedAt: new Date() } as any).returning();
+    return result[0] as AboutContent;
+  }
+
+  // About Values
+  async getAboutValues(): Promise<AboutValue[]> {
+    return db.select().from(aboutValuesTable).orderBy(aboutValuesTable.order) as Promise<AboutValue[]>;
+  }
+
+  async createAboutValue(value: InsertAboutValue): Promise<AboutValue> {
+    const id = randomUUID();
+    const result = await db.insert(aboutValuesTable).values({ id, ...value, createdAt: new Date() } as any).returning();
+    return result[0] as AboutValue;
+  }
+
+  async updateAboutValue(id: string, value: Partial<InsertAboutValue>): Promise<AboutValue | undefined> {
+    const result = await db.update(aboutValuesTable).set(value).where(eq(aboutValuesTable.id, id)).returning();
+    return result[0] as AboutValue | undefined;
+  }
+
+  async deleteAboutValue(id: string): Promise<boolean> {
+    await db.delete(aboutValuesTable).where(eq(aboutValuesTable.id, id));
+    return true;
+  }
+
+  // Services Content
+  async getServicesContent(): Promise<ServicesContent | undefined> {
+    const result = await db.select().from(servicesContentTable).limit(1);
+    return result[0] as ServicesContent | undefined;
+  }
+
+  async updateServicesContent(data: Partial<InsertServicesContent>): Promise<ServicesContent> {
+    const existing = await this.getServicesContent();
+    if (existing) {
+      const result = await db.update(servicesContentTable).set({ ...data, updatedAt: new Date() }).where(eq(servicesContentTable.id, existing.id)).returning();
+      return result[0] as ServicesContent;
+    }
+    const id = randomUUID();
+    const result = await db.insert(servicesContentTable).values({ id, ...data, updatedAt: new Date() } as any).returning();
+    return result[0] as ServicesContent;
+  }
+
+  // Service Items
+  async getServiceItems(): Promise<ServiceItem[]> {
+    return db.select().from(serviceItemsTable) as Promise<ServiceItem[]>;
+  }
+
+  async createServiceItem(item: InsertServiceItem): Promise<ServiceItem> {
+    const id = randomUUID();
+    const result = await db.insert(serviceItemsTable).values({ id, ...item, createdAt: new Date() } as any).returning();
+    return result[0] as ServiceItem;
+  }
+
+  async updateServiceItem(id: string, item: Partial<InsertServiceItem>): Promise<ServiceItem | undefined> {
+    const result = await db.update(serviceItemsTable).set(item).where(eq(serviceItemsTable.id, id)).returning();
+    return result[0] as ServiceItem | undefined;
+  }
+
+  async deleteServiceItem(id: string): Promise<boolean> {
+    await db.delete(serviceItemsTable).where(eq(serviceItemsTable.id, id));
+    return true;
+  }
+
+  // Solutions Content
+  async getSolutionsContent(): Promise<SolutionsContent | undefined> {
+    const result = await db.select().from(solutionsContentTable).limit(1);
+    return result[0] as SolutionsContent | undefined;
+  }
+
+  async updateSolutionsContent(data: Partial<InsertSolutionsContent>): Promise<SolutionsContent> {
+    const existing = await this.getSolutionsContent();
+    if (existing) {
+      const result = await db.update(solutionsContentTable).set({ ...data, updatedAt: new Date() }).where(eq(solutionsContentTable.id, existing.id)).returning();
+      return result[0] as SolutionsContent;
+    }
+    const id = randomUUID();
+    const result = await db.insert(solutionsContentTable).values({ id, ...data, updatedAt: new Date() } as any).returning();
+    return result[0] as SolutionsContent;
+  }
+
+  // Solution Items
+  async getSolutionItems(): Promise<SolutionItem[]> {
+    const items = await db.select().from(solutionItemsTable);
+    return items.map(item => ({
+      ...item,
+      features: typeof item.features === 'string' ? JSON.parse(item.features) : item.features
+    })) as SolutionItem[];
+  }
+
+  async createSolutionItem(item: InsertSolutionItem): Promise<SolutionItem> {
+    const id = randomUUID();
+    const values = {
+      id,
+      ...item,
+      features: JSON.stringify(item.features),
+      createdAt: new Date()
+    };
+    const result = await db.insert(solutionItemsTable).values(values as any).returning();
+
+    // Parse JSON string back to object for return
+    const created = result[0];
+    return {
+      ...created,
+      features: typeof created.features === 'string' ? JSON.parse(created.features) : created.features
+    } as SolutionItem;
+  }
+
+  async updateSolutionItem(id: string, item: Partial<InsertSolutionItem>): Promise<SolutionItem | undefined> {
+    const updateData: any = { ...item };
+    if (item.features) {
+      updateData.features = JSON.stringify(item.features);
+    }
+
+    const result = await db.update(solutionItemsTable).set(updateData).where(eq(solutionItemsTable.id, id)).returning();
+    if (!result[0]) return undefined;
+
+    return {
+      ...result[0],
+      features: typeof result[0].features === 'string' ? JSON.parse(result[0].features) : result[0].features
+    } as SolutionItem;
+  }
+
+  async deleteSolutionItem(id: string): Promise<boolean> {
+    await db.delete(solutionItemsTable).where(eq(solutionItemsTable.id, id));
+    return true;
+  }
+
+  // ============== SOCIAL MEDIA AUTO-SYNC METHODS ==============
+
+  async getSocialMediaSyncLogs(platform?: string, limit: number = 50): Promise<any[]> {
+    try {
+      if (!db) return [];
+      let query = db.select().from(socialMediaSyncLogsTable);
+
+      if (platform) {
+        query = query.where(eq(socialMediaSyncLogsTable.platform, platform)) as any;
+      }
+
+      const logs = await query.limit(limit);
+
+      return logs.map(log => ({
+        ...log,
+        metricsUpdated: log.metricsUpdated ? JSON.parse(log.metricsUpdated) : [],
+        syncedAt: typeof log.syncedAt === 'string' ? log.syncedAt : (log.syncedAt as Date).toISOString()
+      }));
+    } catch (error) {
+      console.error("Error fetching sync logs:", error);
+      return [];
+    }
+  }
+
+  async createSocialMediaSyncLog(log: any): Promise<any> {
+    try {
+      const id = randomUUID();
+      const now = new Date();
+
+      const insertData = {
+        id,
+        platform: log.platform,
+        syncType: log.syncType,
+        status: log.status,
+        metricsUpdated: log.metricsUpdated ? JSON.stringify(log.metricsUpdated) : null,
+        errorMessage: log.errorMessage || null,
+        syncedAt: now
+      };
+
+      const result = await db.insert(socialMediaSyncLogsTable).values(insertData as any).returning();
+
+      return {
+        ...result[0],
+        metricsUpdated: result[0].metricsUpdated ? JSON.parse(result[0].metricsUpdated) : [],
+        syncedAt: typeof result[0].syncedAt === 'string' ? result[0].syncedAt : (result[0].syncedAt as Date).toISOString()
+      };
+    } catch (error) {
+      console.error("Error creating sync log:", error);
+      throw error;
+    }
+  }
+
+  async getSocialMediaApiConfigs(): Promise<any[]> {
+    try {
+      const configs = await db.select().from(socialMediaApiConfigTable);
+      return configs.map(config => ({
+        ...config,
+        createdAt: typeof config.createdAt === 'string' ? config.createdAt : (config.createdAt as Date).toISOString(),
+        updatedAt: typeof config.updatedAt === 'string' ? config.updatedAt : (config.updatedAt as Date).toISOString(),
+        lastSyncAt: config.lastSyncAt ? (typeof config.lastSyncAt === 'string' ? config.lastSyncAt : (config.lastSyncAt as Date).toISOString()) : null,
+        nextSyncAt: config.nextSyncAt ? (typeof config.nextSyncAt === 'string' ? config.nextSyncAt : (config.nextSyncAt as Date).toISOString()) : null
+      }));
+    } catch (error) {
+      console.error("Error fetching API configs:", error);
+      return [];
+    }
+  }
+
+  async getSocialMediaApiConfig(platform: string): Promise<any | undefined> {
+    try {
+      const result = await db.select().from(socialMediaApiConfigTable)
+        .where(eq(socialMediaApiConfigTable.platform, platform))
+        .limit(1);
+
+      if (!result[0]) return undefined;
+
+      return {
+        ...result[0],
+        createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString(),
+        updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString(),
+        lastSyncAt: result[0].lastSyncAt ? (typeof result[0].lastSyncAt === 'string' ? result[0].lastSyncAt : (result[0].lastSyncAt as Date).toISOString()) : null,
+        nextSyncAt: result[0].nextSyncAt ? (typeof result[0].nextSyncAt === 'string' ? result[0].nextSyncAt : (result[0].nextSyncAt as Date).toISOString()) : null
+      };
+    } catch (error) {
+      console.error("Error fetching API config:", error);
+      return undefined;
+    }
+  }
+
+  async updateSocialMediaApiConfig(platform: string, config: any): Promise<any> {
+    try {
+      const existing = await this.getSocialMediaApiConfig(platform);
+      const now = new Date();
+
+      if (existing) {
+        if (!db) throw new Error("Database not initialized");
+        const result = await db.update(socialMediaApiConfigTable)
+          .set({ ...config, updatedAt: now } as any)
+          .where(eq(socialMediaApiConfigTable.platform, platform))
+          .returning();
+
+        return {
+          ...result[0],
+          createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString(),
+          updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString(),
+          lastSyncAt: result[0].lastSyncAt ? (typeof result[0].lastSyncAt === 'string' ? result[0].lastSyncAt : (result[0].lastSyncAt as Date).toISOString()) : null,
+          nextSyncAt: result[0].nextSyncAt ? (typeof result[0].nextSyncAt === 'string' ? result[0].nextSyncAt : (result[0].nextSyncAt as Date).toISOString()) : null
+        };
+      }
+
+      const id = randomUUID();
+      const insertData = {
+        id,
+        platform,
+        ...config,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      if (!db) throw new Error("Database not initialized");
+      const result = await db.insert(socialMediaApiConfigTable).values(insertData as any).returning();
+
+      return {
+        ...result[0],
+        createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString(),
+        updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString(),
+        lastSyncAt: result[0].lastSyncAt ? (typeof result[0].lastSyncAt === 'string' ? result[0].lastSyncAt : (result[0].lastSyncAt as Date).toISOString()) : null,
+        nextSyncAt: result[0].nextSyncAt ? (typeof result[0].nextSyncAt === 'string' ? result[0].nextSyncAt : (result[0].nextSyncAt as Date).toISOString()) : null
+      };
+    } catch (error) {
+      console.error("Error updating API config:", error);
+      throw error;
+    }
+  }
+
+  async deleteSocialMediaApiConfig(platform: string): Promise<boolean> {
+    try {
+      await db.delete(socialMediaApiConfigTable)
+        .where(eq(socialMediaApiConfigTable.platform, platform));
+      return true;
+    } catch (error) {
+      console.error("Error deleting API config:", error);
+      return false;
+    }
+  }
+
+  async getSocialMediaAnalytics(platform: string): Promise<SocialMediaAnalytics | undefined> {
+    try {
+      if (!db) return undefined;
+      const result = await db.select().from(socialMediaAnalyticsTable)
+        .where(eq(socialMediaAnalyticsTable.platform, platform))
+        .limit(1);
+
+      if (!result[0]) return undefined;
+
+      return {
+        ...result[0],
+        createdAt: result[0].createdAt ? (typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()) : undefined
+      } as any;
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      return undefined;
+    }
+  }
+
+  async updateSocialMediaAnalytics(platform: string, data: any): Promise<SocialMediaAnalytics> {
+    try {
+      if (!db) throw new Error("Database not initialized");
+      const existing = await this.getSocialMediaAnalytics(platform);
+      const now = new Date();
+
+      const id = randomUUID();
+      
+      // Parse numeric fields to integers
+      const parsedData = {
+        ...data,
+        followersCount: data.followersCount ? parseInt(String(data.followersCount)) : 0,
+        engagementRate: data.engagementRate ? parseInt(String(data.engagementRate)) : 0,
+        impressions: data.impressions ? parseInt(String(data.impressions)) : 0,
+        likes: data.likes ? parseInt(String(data.likes)) : 0,
+        shares: data.shares ? parseInt(String(data.shares)) : 0,
+        comments: data.comments ? parseInt(String(data.comments)) : 0,
+        postsCount: data.postsCount ? parseInt(String(data.postsCount)) : 0,
+      };
+
+      if (existing) {
+        const result = await db.update(socialMediaAnalyticsTable)
+          .set({ ...parsedData, updatedAt: now })
+          .where(eq(socialMediaAnalyticsTable.platform, platform))
+          .returning();
+        return result[0] as SocialMediaAnalytics;
+      }
+
+      const insertData = {
+        id,
+        platform,
+        ...parsedData,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      const result = await db.insert(socialMediaAnalyticsTable).values(insertData as any).returning();
+      return result[0] as SocialMediaAnalytics;
+    } catch (error) {
+      console.error("Error updating analytics:", error);
+      throw error;
+    }
   }
 }

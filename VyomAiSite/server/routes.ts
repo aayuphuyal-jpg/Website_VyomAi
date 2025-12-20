@@ -12,6 +12,13 @@ import { initiatePayment } from "./payment-service";
 import { validateEmailCredentials, fetchEmails, createEmailSession, validateEmailSession, endEmailSession } from "./email-client";
 import PDFDocument from "pdfkit";
 import nodemailer from "nodemailer";
+import { YouTubeClient } from './social-media-clients/youtube-client';
+import { FacebookClient, InstagramClient } from './social-media-clients/facebook-client';
+import { LinkedInClient } from './social-media-clients/linkedin-client';
+import { TwitterClient } from './social-media-clients/twitter-client';
+import { syncPlatform, syncAllPlatforms } from './social-media-clients';
+import { initializeAutoSync, schedulePlatformSync, stopPlatformSync } from './social-media-sync-scheduler';
+import { encrypt, decrypt } from './crypto-utils';
 
 // OpenAI client - initialized lazily when API key is available
 let openai: OpenAI | null = null;
@@ -36,22 +43,22 @@ async function fetchLiveExchangeRates() {
   try {
     const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
     if (!response.ok) throw new Error('Primary API failed');
-    
+
     const data = await response.json();
-    
+
     let nprRate = data.rates?.NPR;
     if (!nprRate) {
       const inrRate = data.rates?.INR || 83.12;
       nprRate = inrRate * 1.6;
     }
-    
+
     const rates = {
       USD: 1,
       EUR: data.rates?.EUR || 0.92,
       INR: data.rates?.INR || 83.12,
       NPR: nprRate || 132.5,
     };
-    
+
     console.log("✅ Exchange rates fetched:", rates);
     return rates;
   } catch (error) {
@@ -68,17 +75,17 @@ async function fetchLiveExchangeRates() {
 // Get exchange rates with caching
 async function getExchangeRates(forceRefresh = false) {
   const now = Date.now();
-  
+
   if (!forceRefresh && exchangeRateCache && (now - exchangeRateCache.timestamp) < CACHE_DURATION) {
     return exchangeRateCache.rates;
   }
-  
+
   const rates = await fetchLiveExchangeRates();
   exchangeRateCache = {
     rates,
     timestamp: now,
   };
-  
+
   return rates;
 }
 
@@ -89,18 +96,18 @@ function generateToken(): string {
 
 function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  
+
   const token = authHeader.substring(7);
   const username = tokens.get(token);
-  
+
   if (!username) {
     return res.status(401).json({ error: "Invalid token" });
   }
-  
+
   (req as any).user = { username };
   next();
 }
@@ -109,7 +116,7 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  
+
   app.get("/api/visitors", async (req, res) => {
     try {
       const stats = await storage.getVisitorStats();
@@ -313,17 +320,17 @@ export async function registerRoutes(
   app.post("/api/contact", async (req, res) => {
     try {
       const { name, email, subject, message } = req.body;
-      
+
       // Validate input
       if (!name || !email || !subject || !message) {
         return res.status(400).json({ error: "All fields are required" });
       }
-      
+
       // Send emails (fire and forget with error logging)
       sendContactFormEmail({ name, email, subject, message }).catch((emailError) => {
         console.error("📧 Failed to send contact form email:", emailError);
       });
-      
+
       res.json({ success: true, message: "Message received and confirmation sent" });
     } catch (error) {
       console.error("Contact form error:", error);
@@ -334,7 +341,7 @@ export async function registerRoutes(
   app.post("/api/chat", async (req, res) => {
     try {
       const { messages } = req.body;
-      
+
       if (!process.env.OPENAI_API_KEY) {
         return res.json({
           response: "I'm sorry, but the AI service is not configured yet. Please contact us at info@vyomai.cloud for assistance."
@@ -370,7 +377,7 @@ Always maintain a balance between being professional and approachable. Reference
       }
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: "gpt-4o",
         messages: chatMessages,
         max_completion_tokens: 500,
       });
@@ -388,39 +395,41 @@ Always maintain a balance between being professional and approachable. Reference
   app.post("/api/admin/login", async (req, res) => {
     try {
       const { username, password, twoFactorToken } = req.body;
+
       const user = await storage.getUserByUsername(username);
-      
+
       if (!user) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
-      
+
       // Compare hashed password
       const isPasswordValid = await bcryptjs.compare(password, user.password);
+
       if (!isPasswordValid) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
-      
+
       // Check if 2FA is enabled
       if (user.twoFactorEnabled && user.twoFactorSecret) {
         if (!twoFactorToken) {
           return res.status(403).json({ error: "2FA required", requires2FA: true });
         }
-        
+
         // Verify 2FA token
         if (!verifyTwoFactorToken(user.twoFactorSecret, twoFactorToken)) {
           return res.status(401).json({ error: "Invalid 2FA token" });
         }
       }
-      
+
       const token = generateToken();
       tokens.set(token, username);
-      
-      
+
+
       // Auto-expire token after 24 hours
       setTimeout(() => {
         tokens.delete(token);
       }, 24 * 60 * 60 * 1000);
-      
+
       res.json({ success: true, token });
     } catch (error) {
       res.status(500).json({ error: "Login failed" });
@@ -432,19 +441,19 @@ Always maintain a balance between being professional and approachable. Reference
     try {
       const validated = resetPasswordRequestSchema.parse(req.body);
       const { email } = validated;
-      
+
       // Check if user with this email exists
       const user = await storage.getUserByEmail(email);
       if (!user) {
         return res.status(404).json({ error: "User not found. Please check your email address." });
       }
-      
+
       // Generate 6-digit code
       const code = Math.floor(100000 + Math.random() * 900000).toString();
-      
+
       // Store code in memory (expires in 15 minutes)
       await storage.storeResetCode(email, code);
-      
+
       // Send email with code
       try {
         await sendPasswordResetEmail(email, code);
@@ -452,7 +461,7 @@ Always maintain a balance between being professional and approachable. Reference
         console.error("❌ Email sending error:", emailError);
         // Still return success but log the error
       }
-      
+
       res.json({ success: true, message: "Verification code sent to email" });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -470,11 +479,11 @@ Always maintain a balance between being professional and approachable. Reference
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       const code = Math.floor(100000 + Math.random() * 900000).toString();
       await storage.storeResetCode(email, code);
-      
-      
+
+
       res.json({ success: true, code, message: "Test code generated (check console logs)" });
     } catch (error) {
       res.status(500).json({ error: "Failed to generate test code" });
@@ -486,11 +495,11 @@ Always maintain a balance between being professional and approachable. Reference
     try {
       const validated = verifyResetCodeSchema.parse(req.body);
       const isValid = await storage.verifyResetCode(validated.email, validated.code);
-      
+
       if (!isValid) {
         return res.status(401).json({ error: "Invalid or expired verification code" });
       }
-      
+
       res.json({ success: true, message: "Code verified successfully" });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -504,22 +513,22 @@ Always maintain a balance between being professional and approachable. Reference
   app.post("/api/admin/reset-password", async (req, res) => {
     try {
       const validated = resetPasswordSchema.parse(req.body);
-      
+
       // Verify code again for security
       const isValid = await storage.verifyResetCode(validated.email, validated.code);
       if (!isValid) {
         return res.status(401).json({ error: "Invalid or expired verification code" });
       }
-      
+
       // Hash new password
       const hashedPassword = await bcryptjs.hash(validated.newPassword, 10);
-      
+
       // Update password
       const success = await storage.resetPasswordByEmail(validated.email, hashedPassword);
       if (!success) {
         return res.status(500).json({ error: "Failed to reset password" });
       }
-      
+
       res.json({ success: true, message: "Password reset successfully" });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -549,7 +558,7 @@ Always maintain a balance between being professional and approachable. Reference
   app.post("/api/admin/enable-2fa", authMiddleware, async (req, res) => {
     try {
       const { secret, token } = req.body;
-      
+
       if (!secret || !token) {
         return res.status(400).json({ error: "Secret and token required" });
       }
@@ -584,9 +593,9 @@ Always maintain a balance between being professional and approachable. Reference
       const { testEmailProvider } = await import("./email-service");
       const settings = await storage.getSettings();
       const primaryProvider = (settings as any).emailProvider || "smtp";
-      
+
       const result = await testEmailProvider(primaryProvider as any);
-      
+
       res.json({
         connected: result.success,
         provider: primaryProvider,
@@ -604,7 +613,7 @@ Always maintain a balance between being professional and approachable. Reference
       const { getProviderStatuses } = await import("./email-service");
       const settings = await storage.getSettings() as any;
       const statuses = await getProviderStatuses();
-      
+
       res.json({
         providers: statuses,
         config: {
@@ -672,7 +681,7 @@ Always maintain a balance between being professional and approachable. Reference
     try {
       const { testEmailProvider } = await import("./email-service");
       const { provider } = req.body;
-      
+
       if (!provider || !["gmail", "smtp", "sendgrid"].includes(provider)) {
         return res.status(400).json({ error: "Invalid provider" });
       }
@@ -692,7 +701,7 @@ Always maintain a balance between being professional and approachable. Reference
       if (!email) {
         return res.status(400).json({ error: "Email address required" });
       }
-      
+
       const result = await sendEmailWithResult({
         to: email,
         subject: "VyomAi Test Email",
@@ -706,7 +715,7 @@ Always maintain a balance between being professional and approachable. Reference
           </div>
         `,
       });
-      
+
       if (result.success) {
         res.json({ success: true, provider: result.provider });
       } else {
@@ -725,18 +734,18 @@ Always maintain a balance between being professional and approachable. Reference
     message: z.string().min(1, "Message is required"),
     type: z.enum(["booking_response", "inquiry_response", "general"]).optional(),
   });
-  
+
   app.post("/api/admin/send-email", authMiddleware, async (req, res) => {
     try {
       const { sendEmailWithResult } = await import("./email-service");
-      
+
       const validation = sendEmailSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({ error: validation.error.errors[0]?.message || "Invalid input" });
       }
-      
+
       const { to, subject, message } = validation.data;
-      
+
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="background: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%); padding: 20px; border-radius: 8px 8px 0 0;">
@@ -751,13 +760,13 @@ Always maintain a balance between being professional and approachable. Reference
           </div>
         </div>
       `;
-      
+
       const result = await sendEmailWithResult({
         to,
         subject,
         html: emailHtml,
       });
-      
+
       if (result.success) {
         res.json({ success: true, provider: result.provider });
       } else {
@@ -874,7 +883,7 @@ Always maintain a balance between being professional and approachable. Reference
   app.post("/api/admin/pricing/verify-conversion", authMiddleware, async (req, res) => {
     try {
       const { basePrice, baseCurrency, targetCurrency, convertedPrice } = req.body;
-      
+
       if (!basePrice || !baseCurrency || !targetCurrency || convertedPrice === undefined) {
         return res.status(400).json({ error: "Missing required fields" });
       }
@@ -884,7 +893,7 @@ Always maintain a balance between being professional and approachable. Reference
       const targetRate = rates[targetCurrency as keyof typeof rates] || 1;
       const expectedPrice = Math.round((basePrice / baseRate) * targetRate * 100) / 100;
       const deviation = Math.abs(expectedPrice - convertedPrice) / expectedPrice * 100;
-      
+
       let aiVerification = null;
       if (openai) {
         try {
@@ -909,7 +918,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
             ],
             max_tokens: 150
           });
-          
+
           const response = completion.choices[0]?.message?.content || "";
           try {
             aiVerification = JSON.parse(response);
@@ -1074,7 +1083,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
     try {
       const rates = await getExchangeRates(false);
       const settings = await storage.getSettings();
-      
+
       res.json({
         rates,
         lastUpdated: exchangeRateCache?.timestamp || new Date().toISOString(),
@@ -1090,13 +1099,13 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
     try {
       const rates = await getExchangeRates(true);
       const timestamp = new Date().toISOString();
-      
+
       // Update in database
       await storage.updateSettings({
         exchangeRates: rates,
         exchangeRatesUpdatedAt: timestamp,
       });
-      
+
       res.json({
         success: true,
         message: "Exchange rates refreshed successfully",
@@ -1142,7 +1151,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
   app.post("/api/payment/verify", async (req, res) => {
     try {
       const { transactionId } = req.body;
-      
+
       if (!transactionId) {
         return res.status(400).json({ error: "Transaction ID required" });
       }
@@ -1160,7 +1169,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
     try {
       const validated = insertBookingRequestSchema.parse(req.body);
       const booking = await storage.createBookingRequest(validated);
-      
+
       // Send confirmation emails
       await sendBookingConfirmationEmail({
         name: validated.name,
@@ -1168,7 +1177,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         companyOrPersonal: validated.companyOrPersonal,
         message: validated.message,
       });
-      
+
       res.json(booking);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1322,7 +1331,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       if (!currentUser || currentUser.role !== "vyom_admin") {
         return res.status(403).json({ error: "Only Vyom Admin can create users" });
       }
-      
+
       const { username, email, password, role, permissions } = req.body;
       if (!username || !password) {
         return res.status(400).json({ error: "Username and password are required" });
@@ -1339,9 +1348,9 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         role: role || "admin",
         permissions: permissions || "[]"
       });
-      res.json({ 
-        id: user.id, 
-        username: user.username, 
+      res.json({
+        id: user.id,
+        username: user.username,
         email: user.email,
         role: user.role,
         permissions: user.permissions
@@ -1359,17 +1368,17 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       if (!currentUser || currentUser.role !== "vyom_admin") {
         return res.status(403).json({ error: "Only Vyom Admin can update users" });
       }
-      
+
       const { email, role, permissions } = req.body;
       const targetUser = await storage.getUser(req.params.id);
       if (!targetUser) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       if (targetUser.role === "vyom_admin" && currentUser.id !== targetUser.id) {
         return res.status(403).json({ error: "Cannot modify another Vyom Admin" });
       }
-      
+
       const updated = await storage.updateUser(req.params.id, { email, role, permissions });
       res.json({
         id: updated!.id,
@@ -1391,7 +1400,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       if (!currentUser || currentUser.role !== "vyom_admin") {
         return res.status(403).json({ error: "Only Vyom Admin can change passwords" });
       }
-      
+
       const { password } = req.body;
       if (!password || password.length < 6) {
         return res.status(400).json({ error: "Password must be at least 6 characters" });
@@ -1415,20 +1424,20 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       if (!currentUser || currentUser.role !== "vyom_admin") {
         return res.status(403).json({ error: "Only Vyom Admin can delete users" });
       }
-      
+
       const targetUser = await storage.getUser(req.params.id);
       if (!targetUser) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       if (targetUser.id === currentUser.id) {
         return res.status(403).json({ error: "Cannot delete your own account" });
       }
-      
+
       if (targetUser.role === "vyom_admin") {
         return res.status(403).json({ error: "Cannot delete a Vyom Admin" });
       }
-      
+
       const deleted = await storage.deleteUser(req.params.id);
       if (!deleted) {
         return res.status(404).json({ error: "User not found" });
@@ -1445,7 +1454,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
     try {
       const validated = insertOneTimePricingRequestSchema.parse(req.body);
       const request = await storage.createOneTimePricingRequest(validated);
-      
+
       // Send emails (fire and forget with error logging)
       const pkg = await storage.getPricingPackage(validated.packageId);
       if (pkg?.oneTimeContactEmail) {
@@ -1462,7 +1471,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
           console.error("📧 Failed to send one-time pricing request email:", emailError);
         });
       }
-      
+
       res.json(request);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1541,9 +1550,33 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
   // Public endpoint to get integration status (no auth required)
   app.get("/api/integrations", async (req, res) => {
     try {
+      const configs = await storage.getSocialMediaApiConfigs();
+      const publishedConfigs = configs.filter((c: any) => c.isPublished !== false);
       const integrations = await storage.getSocialMediaIntegrations();
-      res.json(integrations);
+
+      const publicIntegrations = await Promise.all(publishedConfigs.map(async (config: any) => {
+        const integration = integrations.find((i: any) => i.platform === config.platform);
+        const analytics = await storage.getSocialMediaAnalytics(config.platform);
+        return {
+          platform: config.platform,
+          isConnected: integration?.isConnected || false,
+          accountName: integration?.accountName,
+          profileUrl: integration?.profileUrl,
+          analytics: analytics || {
+            followersCount: 0,
+            engagementRate: 0,
+            impressions: 0,
+            likes: 0,
+            shares: 0,
+            comments: 0,
+            postsCount: 0
+          }
+        };
+      }));
+
+      res.json(publicIntegrations);
     } catch (error) {
+      console.error("Error fetching public integrations:", error);
       res.status(500).json({ error: "Failed to get integrations" });
     }
   });
@@ -1581,9 +1614,9 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       const { apiKey } = req.body;
 
       if (!apiKey || typeof apiKey !== "string" || apiKey.trim().length === 0) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "API key is required and cannot be empty" 
+        return res.status(400).json({
+          success: false,
+          message: "API key is required and cannot be empty"
         });
       }
 
@@ -1594,9 +1627,9 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         // YouTube: Google API keys start with "AIzaSy" followed by ~30+ alphanumeric chars
         const validKeyFormat = /^AIzaSy[a-zA-Z0-9_-]{30,}$/.test(trimmedKey);
         if (!validKeyFormat) {
-          return res.status(400).json({ 
-            success: false, 
-            message: "Invalid YouTube API key format. Must start with 'AIzaSy' and contain 40+ characters total. Get it from Google Cloud Console." 
+          return res.status(400).json({
+            success: false,
+            message: "Invalid YouTube API key format. Must start with 'AIzaSy' and contain 40+ characters total. Get it from Google Cloud Console."
           });
         }
         await storage.updateSocialMediaIntegration(platform, { isConnected: true });
@@ -1604,119 +1637,119 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
           success: true,
           message: "✓ YouTube API key format is valid! Ensure YouTube Data API v3 is enabled in Google Cloud Console.",
         });
-      } 
+      }
       else if (platform === "facebook") {
         // Facebook: Access tokens typically start with "EAAB" and are 100+ chars
         if (trimmedKey.length < 50) {
-          return res.status(400).json({ 
-            success: false, 
-            message: "Invalid Facebook token format. Must be at least 50 characters. Get a long-lived token from Meta Business Suite." 
+          return res.status(400).json({
+            success: false,
+            message: "Invalid Facebook token format. Must be at least 50 characters. Get a long-lived token from Meta Business Suite."
           });
         }
         // Optional: check for common Facebook token patterns
         if (!(/^[A-Za-z0-9_-]+$/.test(trimmedKey))) {
-          return res.status(400).json({ 
-            success: false, 
-            message: "Facebook token contains invalid characters. Only alphanumeric, underscore, and dash allowed." 
+          return res.status(400).json({
+            success: false,
+            message: "Facebook token contains invalid characters. Only alphanumeric, underscore, and dash allowed."
           });
         }
         await storage.updateSocialMediaIntegration(platform, { isConnected: true });
-        return res.json({ 
-          success: true, 
-          message: "✓ Facebook token format is valid! Verify the token has 'pages_read_engagement' and 'pages_manage_posts' permissions." 
+        return res.json({
+          success: true,
+          message: "✓ Facebook token format is valid! Verify the token has 'pages_read_engagement' and 'pages_manage_posts' permissions."
         });
       }
       else if (platform === "instagram") {
         // Instagram: Uses same token format as Facebook (100+ chars)
         if (trimmedKey.length < 50) {
-          return res.status(400).json({ 
-            success: false, 
-            message: "Invalid Instagram token format. Must be at least 50 characters. Get a Graph API token from Meta Business Suite." 
+          return res.status(400).json({
+            success: false,
+            message: "Invalid Instagram token format. Must be at least 50 characters. Get a Graph API token from Meta Business Suite."
           });
         }
         if (!(/^[A-Za-z0-9_-]+$/.test(trimmedKey))) {
-          return res.status(400).json({ 
-            success: false, 
-            message: "Instagram token contains invalid characters. Only alphanumeric, underscore, and dash allowed." 
+          return res.status(400).json({
+            success: false,
+            message: "Instagram token contains invalid characters. Only alphanumeric, underscore, and dash allowed."
           });
         }
         await storage.updateSocialMediaIntegration(platform, { isConnected: true });
-        return res.json({ 
-          success: true, 
-          message: "✓ Instagram token format is valid! Ensure your app has 'instagram_basic' and 'pages_read_engagement' permissions." 
+        return res.json({
+          success: true,
+          message: "✓ Instagram token format is valid! Ensure your app has 'instagram_basic' and 'pages_read_engagement' permissions."
         });
       }
       else if (platform === "linkedin") {
         // LinkedIn: OAuth tokens or API keys (typically 100+ chars)
         if (trimmedKey.length < 40) {
-          return res.status(400).json({ 
-            success: false, 
-            message: "Invalid LinkedIn API key format. Must be at least 40 characters. Get your access token from LinkedIn Developers portal." 
+          return res.status(400).json({
+            success: false,
+            message: "Invalid LinkedIn API key format. Must be at least 40 characters. Get your access token from LinkedIn Developers portal."
           });
         }
         if (!(/^[A-Za-z0-9_-]+$/.test(trimmedKey))) {
-          return res.status(400).json({ 
-            success: false, 
-            message: "LinkedIn token contains invalid characters. Only alphanumeric, underscore, and dash allowed." 
+          return res.status(400).json({
+            success: false,
+            message: "LinkedIn token contains invalid characters. Only alphanumeric, underscore, and dash allowed."
           });
         }
         await storage.updateSocialMediaIntegration(platform, { isConnected: true });
-        return res.json({ 
-          success: true, 
-          message: "✓ LinkedIn API key format is valid! Ensure you have 'r_liteprofile' and 'r_basicprofile' permissions." 
+        return res.json({
+          success: true,
+          message: "✓ LinkedIn API key format is valid! Ensure you have 'r_liteprofile' and 'r_basicprofile' permissions."
         });
       }
       else if (platform === "whatsapp") {
         // WhatsApp Business: Very long tokens (150+ chars typically)
         if (trimmedKey.length < 100) {
-          return res.status(400).json({ 
-            success: false, 
-            message: "Invalid WhatsApp Business API token format. Must be at least 100 characters. Get your token from WhatsApp Business API dashboard." 
+          return res.status(400).json({
+            success: false,
+            message: "Invalid WhatsApp Business API token format. Must be at least 100 characters. Get your token from WhatsApp Business API dashboard."
           });
         }
         if (!(/^[A-Za-z0-9_-]+$/.test(trimmedKey))) {
-          return res.status(400).json({ 
-            success: false, 
-            message: "WhatsApp token contains invalid characters. Only alphanumeric, underscore, and dash allowed." 
+          return res.status(400).json({
+            success: false,
+            message: "WhatsApp token contains invalid characters. Only alphanumeric, underscore, and dash allowed."
           });
         }
         await storage.updateSocialMediaIntegration(platform, { isConnected: true });
-        return res.json({ 
-          success: true, 
-          message: "✓ WhatsApp Business API token format is valid! Verify your phone number is verified in the Business dashboard." 
+        return res.json({
+          success: true,
+          message: "✓ WhatsApp Business API token format is valid! Verify your phone number is verified in the Business dashboard."
         });
       }
       else if (platform === "viber") {
         // Viber: Bot access tokens (60+ chars typically)
         if (trimmedKey.length < 40) {
-          return res.status(400).json({ 
-            success: false, 
-            message: "Invalid Viber bot token format. Must be at least 40 characters. Get your token from Viber Business dashboard." 
+          return res.status(400).json({
+            success: false,
+            message: "Invalid Viber bot token format. Must be at least 40 characters. Get your token from Viber Business dashboard."
           });
         }
         if (!(/^[A-Za-z0-9_-]+$/.test(trimmedKey))) {
-          return res.status(400).json({ 
-            success: false, 
-            message: "Viber token contains invalid characters. Only alphanumeric, underscore, and dash allowed." 
+          return res.status(400).json({
+            success: false,
+            message: "Viber token contains invalid characters. Only alphanumeric, underscore, and dash allowed."
           });
         }
         await storage.updateSocialMediaIntegration(platform, { isConnected: true });
-        return res.json({ 
-          success: true, 
-          message: "✓ Viber bot token format is valid! Ensure your Viber Public Account is active and verified." 
+        return res.json({
+          success: true,
+          message: "✓ Viber bot token format is valid! Ensure your Viber Public Account is active and verified."
         });
       }
       else {
-        return res.status(400).json({ 
-          success: false, 
-          message: `Platform '${platform}' is not supported. Supported: youtube, facebook, instagram, linkedin, whatsapp, viber` 
+        return res.status(400).json({
+          success: false,
+          message: `Platform '${platform}' is not supported. Supported: youtube, facebook, instagram, linkedin, whatsapp, viber`
         });
       }
     } catch (error) {
       console.error("Integration test error:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Failed to test integration. Please try again." 
+      res.status(500).json({
+        success: false,
+        message: "Failed to test integration. Please try again."
       });
     }
   });
@@ -1862,12 +1895,12 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
   app.post("/api/admin/reports/generate-pdf", authMiddleware, async (req, res) => {
     try {
       const { startDate, endDate, inquiryType } = req.body;
-      
+
       const inquiries = await storage.getCustomerInquiries();
       const start = new Date(startDate);
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
-      
+
       const filtered = inquiries.filter(i => {
         const date = new Date(i.createdAt);
         const typeMatch = inquiryType === "all" || i.inquiryType === inquiryType;
@@ -1877,23 +1910,23 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       const doc = new PDFDocument();
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="report-${Date.now()}.pdf"`);
-      
+
       doc.pipe(res);
-      
+
       // Title
       doc.fontSize(24).font("Helvetica-Bold").text("VyomAi Analytics Report", { align: "center" });
       doc.moveDown(0.5);
-      
+
       // Report Date
       doc.fontSize(12).font("Helvetica").text(`Generated: ${new Date().toLocaleString()}`, { align: "center" });
       doc.fontSize(11).text(`Period: ${startDate} to ${endDate}`, { align: "center" });
       doc.moveDown(1);
-      
+
       // Summary Cards
       doc.fontSize(14).font("Helvetica-Bold").text("Summary Statistics");
       doc.fontSize(11).font("Helvetica");
       doc.moveDown(0.3);
-      
+
       const summary = {
         total: filtered.length,
         contact: filtered.filter(i => i.inquiryType === "contact").length,
@@ -1901,20 +1934,20 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         project: filtered.filter(i => i.inquiryType === "project_discussion").length,
         custom: filtered.filter(i => i.inquiryType === "custom_solution").length,
       };
-      
+
       doc.text(`• Total Inquiries: ${summary.total}`);
       doc.text(`• Contact Forms: ${summary.contact}`);
       doc.text(`• Booking Requests: ${summary.booking}`);
       doc.text(`• Project Discussions: ${summary.project}`);
       doc.text(`• Custom Solutions: ${summary.custom}`);
       doc.moveDown(1);
-      
+
       // Detailed List
       if (filtered.length > 0) {
         doc.fontSize(14).font("Helvetica-Bold").text("Detailed Records");
         doc.moveDown(0.3);
         doc.fontSize(10);
-        
+
         filtered.slice(0, 50).forEach((inquiry, idx) => {
           const typeLabel = inquiry.inquiryType?.replace("_", " ").toUpperCase() || "UNKNOWN";
           doc.font("Helvetica-Bold").text(`${idx + 1}. ${inquiry.name} (${typeLabel})`, { underline: true });
@@ -1925,14 +1958,14 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
           doc.text(`Date: ${new Date(inquiry.createdAt || "").toLocaleString()}`);
           doc.moveDown(0.3);
         });
-        
+
         if (filtered.length > 50) {
           doc.moveDown(0.5).text(`... and ${filtered.length - 50} more records`, { italic: true });
         }
       } else {
         doc.text("No records found for the selected criteria.");
       }
-      
+
       doc.end();
     } catch (error) {
       console.error("Report generation error:", error);
@@ -1943,17 +1976,17 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
   app.post("/api/admin/reports/generate-and-send", authMiddleware, async (req, res) => {
     try {
       const { startDate, endDate, inquiryType, recipientEmail } = req.body;
-      
+
       // Collect all analytics data
       const inquiries = await storage.getCustomerInquiries();
       const visitorStats = await storage.getVisitorStats();
       const socialAnalytics = await storage.getSocialMediaAnalytics();
       const settings = await storage.getSettings();
-      
+
       const start = new Date(startDate);
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
-      
+
       const filtered = inquiries.filter(i => {
         const date = new Date(i.createdAt);
         const typeMatch = inquiryType === "all" || i.inquiryType === inquiryType;
@@ -1963,9 +1996,9 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       const doc = new PDFDocument({ margin: 40 });
       const chunks: Buffer[] = [];
       let pageNum = 0;
-      
+
       doc.on("data", (chunk: Buffer) => chunks.push(chunk));
-      
+
       // Helper function to add header and footer
       const addHeaderFooter = () => {
         doc.fontSize(8).font("Helvetica").text("VyomAi Analytics Report", 40, 20, { width: 515 });
@@ -1974,7 +2007,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         doc.moveTo(40, doc.page.height - 50).lineTo(555, doc.page.height - 50).stroke("#CCCCCC");
         doc.text(`Generated: ${new Date().toLocaleDateString()} | Period: ${startDate} to ${endDate}`, 40, doc.page.height - 35, { width: 515, size: 8 });
       };
-      
+
       // ===== COVER PAGE =====
       addHeaderFooter();
       doc.fontSize(32).font("Helvetica-Bold").text("VyomAi", { align: "center", y: 100 });
@@ -1983,26 +2016,26 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       doc.fontSize(12).font("Helvetica").text(`Report Period: ${startDate} to ${endDate}`, { align: "center" });
       doc.text(`Generated: ${new Date().toLocaleString()}`, { align: "center" });
       doc.moveDown(3);
-      
+
       // Summary cards with better formatting
       const daysDiff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
       const avgDaily = Math.round((visitorStats?.totalVisitors || 0) / daysDiff);
-      
+
       doc.fontSize(14).font("Helvetica-Bold").text("Executive Summary", { align: "center" });
       doc.moveDown(1).fontSize(11).font("Helvetica");
       doc.text(`Total Visitors: ${visitorStats?.totalVisitors || 0}`, { indent: 40 });
       doc.text(`Daily Average: ${avgDaily} visitors/day`, { indent: 40 });
       doc.text(`Total Inquiries: ${filtered.length}`, { indent: 40 });
       doc.text(`Inquiry Rate: ${filtered.length > 0 ? (filtered.length / daysDiff).toFixed(1) : 0} inquiries/day`, { indent: 40 });
-      
+
       // ===== INQUIRY ANALYTICS PAGE =====
       doc.addPage();
       addHeaderFooter();
       doc.y = 70;
-      
+
       doc.fontSize(18).font("Helvetica-Bold").text("Customer Inquiry Analytics");
       doc.moveDown(0.5).fontSize(11).font("Helvetica");
-      
+
       const summary = {
         total: filtered.length,
         contact: filtered.filter(i => i.inquiryType === "contact").length,
@@ -2010,7 +2043,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         project: filtered.filter(i => i.inquiryType === "project_discussion").length,
         custom: filtered.filter(i => i.inquiryType === "custom_solution").length,
       };
-      
+
       // Summary table
       doc.fontSize(10).font("Helvetica-Bold").text("Inquiry Type Distribution:", { underline: true });
       doc.fontSize(9).font("Helvetica");
@@ -2019,11 +2052,11 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       doc.text(`• Project Discussions: ${summary.project} (${summary.total > 0 ? Math.round((summary.project / summary.total) * 100) : 0}%)`, { indent: 20 });
       doc.text(`• Custom Solutions: ${summary.custom} (${summary.total > 0 ? Math.round((summary.custom / summary.total) * 100) : 0}%)`, { indent: 20 });
       doc.moveDown(0.7);
-      
+
       // Detailed inquiry records in table format
       doc.fontSize(10).font("Helvetica-Bold").text("Detailed Inquiry Records:", { underline: true });
       doc.moveDown(0.3);
-      
+
       // Table header
       const tableTop = doc.y;
       const col1 = 50, col2 = 150, col3 = 250, col4 = 380, col5 = 480;
@@ -2033,20 +2066,20 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       doc.text("Type", col3, tableTop);
       doc.text("Email", col4, tableTop);
       doc.text("Date", col5, tableTop);
-      
+
       // Draw line under header
       doc.moveTo(45, tableTop + 12).lineTo(555, tableTop + 12).stroke("#CCCCCC");
-      
+
       let rowY = tableTop + 18;
       doc.fontSize(7).font("Helvetica");
-      
+
       if (filtered.length > 0) {
         filtered.slice(0, 150).forEach((inquiry, idx) => {
           const typeLabel = inquiry.inquiryType?.replace("_", " ").substring(0, 4).toUpperCase() || "N/A";
           const nameShort = inquiry.name.substring(0, 15);
           const emailShort = inquiry.email.substring(0, 20);
           const dateStr = new Date(inquiry.createdAt || "").toLocaleDateString();
-          
+
           // Check if we need a new page
           if (rowY > doc.page.height - 80) {
             doc.addPage();
@@ -2063,38 +2096,38 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
             rowY += 8;
             doc.fontSize(7).font("Helvetica");
           }
-          
+
           doc.text(`${idx + 1}`, col1, rowY);
           doc.text(nameShort, col2, rowY);
           doc.text(typeLabel, col3, rowY);
           doc.text(emailShort, col4, rowY);
           doc.text(dateStr, col5, rowY);
-          
+
           rowY += 12;
         });
-        
+
         if (filtered.length > 150) {
           doc.moveDown(0.3).fontSize(8).text(`... and ${filtered.length - 150} more inquiry records (see admin dashboard for complete list)`, { italic: true });
         }
       } else {
         doc.fontSize(9).text("No inquiry records found for this period.", { italic: true });
       }
-      
+
       // ===== SOCIAL MEDIA ANALYTICS PAGE =====
       if (socialAnalytics && socialAnalytics.length > 0) {
         doc.addPage();
         addHeaderFooter();
         doc.y = 70;
-        
+
         doc.fontSize(18).font("Helvetica-Bold").text("Social Media Analytics");
         doc.moveDown(0.5);
-        
+
         // Calculate total engagement metrics
         const totalFollowers = socialAnalytics.reduce((sum, p) => sum + (p.followers || 0), 0);
         const avgEngagement = (socialAnalytics.reduce((sum, p) => sum + (p.engagementRate || 0), 0) / socialAnalytics.length).toFixed(2);
         const totalImpressions = socialAnalytics.reduce((sum, p) => sum + (p.impressions || 0), 0);
         const topPlatform = socialAnalytics.sort((a, b) => (b.followers || 0) - (a.followers || 0))[0];
-        
+
         doc.fontSize(10).font("Helvetica-Bold").text("Summary Metrics:", { underline: true });
         doc.fontSize(9).font("Helvetica");
         doc.text(`Total Followers (All Platforms): ${totalFollowers.toLocaleString()}`, { indent: 20 });
@@ -2102,26 +2135,26 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         doc.text(`Total Impressions: ${totalImpressions.toLocaleString()}`, { indent: 20 });
         doc.text(`Top Platform: ${topPlatform?.platform || "N/A"} (${topPlatform?.followers || 0} followers)`, { indent: 20 });
         doc.moveDown(0.7);
-        
+
         // Platform details table
         doc.fontSize(10).font("Helvetica-Bold").text("Platform Details:", { underline: true });
         doc.moveDown(0.3);
-        
+
         const tableTopSocial = doc.y;
         const sCol1 = 60, sCol2 = 160, sCol3 = 260, sCol4 = 360, sCol5 = 480;
-        
+
         doc.fontSize(8).font("Helvetica-Bold");
         doc.text("Platform", sCol1, tableTopSocial);
         doc.text("Followers", sCol2, tableTopSocial);
         doc.text("Engagement %", sCol3, tableTopSocial);
         doc.text("Impressions", sCol4, tableTopSocial);
         doc.text("Clicks", sCol5, tableTopSocial);
-        
+
         doc.moveTo(45, tableTopSocial + 12).lineTo(555, tableTopSocial + 12).stroke("#CCCCCC");
-        
+
         let sRowY = tableTopSocial + 18;
         doc.fontSize(8).font("Helvetica");
-        
+
         socialAnalytics.forEach(platform => {
           doc.text(platform.platform?.substring(0, 10) || "Platform", sCol1, sRowY);
           doc.text((platform.followers || 0).toString(), sCol2, sRowY);
@@ -2131,15 +2164,15 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
           sRowY += 14;
         });
       }
-      
+
       // ===== VISITOR STATISTICS PAGE =====
       doc.addPage();
       addHeaderFooter();
       doc.y = 70;
-      
+
       doc.fontSize(18).font("Helvetica-Bold").text("Visitor Statistics & Trends");
       doc.moveDown(0.5).fontSize(11).font("Helvetica");
-      
+
       doc.fontSize(10).font("Helvetica-Bold").text("Overall Metrics:", { underline: true });
       doc.fontSize(9).font("Helvetica");
       doc.text(`Total Visitors: ${visitorStats?.totalVisitors || 0}`, { indent: 20 });
@@ -2147,7 +2180,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       doc.text(`Average Daily Visitors: ${avgDaily}`, { indent: 20 });
       doc.text(`Estimated Peak Day: ${Math.round(avgDaily * 1.5)} visitors`, { indent: 20 });
       doc.moveDown(0.7);
-      
+
       doc.fontSize(10).font("Helvetica-Bold").text("Trend Analysis:", { underline: true });
       doc.fontSize(9).font("Helvetica");
       const visitorTrend = visitorStats?.totalVisitors ? (avgDaily > 50 ? "Strong" : avgDaily > 20 ? "Moderate" : "Low") : "No data";
@@ -2155,21 +2188,21 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       doc.text(`Overall Trend: ${visitorTrend} visitor engagement`, { indent: 20 });
       doc.text(`Growth Status: ${growthStatus} visitor acquisition phase`, { indent: 20 });
       doc.text(`Visitor-to-Inquiry Ratio: ${avgDaily > 0 ? (filtered.length / daysDiff / avgDaily * 100).toFixed(2) : 0}% conversion rate`, { indent: 20 });
-      
+
       // ===== AI BUSINESS INTELLIGENCE PAGE =====
       doc.addPage();
       addHeaderFooter();
       doc.y = 70;
-      
+
       doc.fontSize(18).font("Helvetica-Bold").text("Business Intelligence & AI Insights");
       doc.moveDown(0.5);
-      
+
       // Generate sophisticated AI insights
-      const peakCategory = summary.total > 0 ? Object.entries(summary).filter(([k]) => k !== 'total').sort(([,a], [,b]) => b - a)[0] : null;
+      const peakCategory = summary.total > 0 ? Object.entries(summary).filter(([k]) => k !== 'total').sort(([, a], [, b]) => b - a)[0] : null;
       const conversionRate = summary.total > 0 ? Math.round((summary.booking / summary.total) * 100) : 0;
       const avgEngagementSocial = socialAnalytics?.length > 0 ? (socialAnalytics.reduce((sum, p) => sum + (p.engagementRate || 0), 0) / socialAnalytics.length).toFixed(1) : "0";
       const topPerformer = socialAnalytics?.length > 0 ? socialAnalytics.sort((a, b) => (b.engagementRate || 0) - (a.engagementRate || 0))[0] : null;
-      
+
       const aiInsights = [
         {
           title: "Primary Revenue Driver",
@@ -2196,26 +2229,26 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
           insight: `With current metrics, implement A/B testing on key inquiry forms and boost your top-performing social platform. Expected outcome: 20-30% increase in qualified leads within 60 days.`
         }
       ];
-      
+
       doc.fontSize(11).font("Helvetica-Bold").text("Key Insights & Recommendations:");
       doc.moveDown(0.5).fontSize(9).font("Helvetica");
-      
+
       aiInsights.forEach((item, idx) => {
         doc.fontSize(9).font("Helvetica-Bold").text(`${idx + 1}. ${item.title}:`);
         doc.fontSize(8).font("Helvetica").text(item.insight, { indent: 20, width: 475 });
         doc.moveDown(0.3);
       });
-      
+
       doc.moveDown(1);
       doc.fontSize(8).font("Helvetica").text("This report was generated using advanced analytics and AI-powered business intelligence. All recommendations are based on your actual business metrics.", { align: "center", italic: true, width: 475 });
       doc.text("For strategic consultation, contact the VyomAi team.", { align: "center", italic: true, width: 475 });
-      
+
       doc.end();
-      
+
       doc.on("end", async () => {
         try {
           const pdfBuffer = Buffer.concat(chunks);
-          
+
           // Professional email HTML
           const emailHtml = `
             <div style="font-family: 'Arial', sans-serif; max-width: 700px; color: #333;">
@@ -2274,7 +2307,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
               </div>
             </div>
           `;
-          
+
           const emailSent = await sendEmailWithAttachment({
             to: recipientEmail,
             subject: `VyomAi Analytics Report - ${startDate} to ${endDate}`,
@@ -2302,12 +2335,12 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
   // ========================================
   // HOME PAGE CONTENT MANAGEMENT ROUTES
   // ========================================
-  
+
   // Hero Content Routes
   app.get("/api/content/hero", async (req, res) => {
     try {
       const content = await storage.getHeroContent();
-      res.json({ content: content || null });
+      res.json(content || null);
     } catch (error) {
       console.error("Error fetching hero content:", error);
       res.status(500).json({ error: "Failed to fetch hero content" });
@@ -2578,12 +2611,12 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
   app.post("/api/test/seed-dummy-data", async (req, res) => {
     try {
       console.log("Seeding dummy data for testing...");
-      
+
       // Add dummy inquiries for the past 30 days
       const inquiryTypes = ["contact", "booking", "project_discussion", "custom_solution"];
       const names = ["Raj Kumar", "Priya Sharma", "Anil Patel", "Neha Singh", "Vikram Gupta", "Anjali Verma", "Rohit Kumar", "Sneha Desai"];
       const domains = ["@gmail.com", "@yahoo.com", "@outlook.com", "@company.com"];
-      
+
       for (let i = 0; i < 45; i++) {
         await storage.createCustomerInquiry({
           name: names[Math.floor(Math.random() * names.length)],
@@ -2593,9 +2626,9 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
           message: `This is a test inquiry message for report testing. Sample message ${i}.`,
         });
       }
-      
+
       console.log("✓ Added 45 test inquiries");
-      
+
       // Add social media analytics with fixed timestamp handling
       const platforms = [
         { name: "linkedin", followers: 1250, engagement: 4.2, impressions: 15000, likes: 650 },
@@ -2605,7 +2638,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         { name: "twitter", followers: 560, engagement: 2.4, impressions: 8900, likes: 213 },
         { name: "whatsapp", followers: 4200, engagement: 12.3, impressions: 12000, likes: 1476 },
       ];
-      
+
       for (const p of platforms) {
         await storage.updateSocialMediaAnalytics(p.name, {
           followersCount: String(p.followers),
@@ -2617,9 +2650,9 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
           postsCount: "0",
         });
       }
-      
+
       console.log("✓ Added social media analytics for 6 platforms");
-      
+
       res.json({
         success: true,
         message: "Dummy data seeded successfully - 45 customer inquiries + 6 platforms analytics for 1 month",
@@ -2633,5 +2666,259 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
     }
   });
 
+  // ============== SOCIAL MEDIA AUTO-SYNC INTEGRATION ROUTES ==============
+
+  // Get all API configurations
+  app.get("/api/admin/social-media/config", authMiddleware, async (req, res) => {
+    try {
+      const configs = await storage.getSocialMediaApiConfigs();
+      const integrations = await storage.getSocialMediaIntegrations();
+
+      // Combine configs and integrations
+      const combined = configs.map(config => {
+        const integration = integrations.find(i => i.platform === config.platform);
+        return {
+          ...config,
+          isConnected: integration?.isConnected || false,
+          accountName: integration?.accountName,
+          lastSyncAt: config.lastSyncAt,
+          nextSyncAt: config.nextSyncAt,
+        };
+      });
+
+      res.json(combined);
+    } catch (error) {
+      console.error("Error fetching social media config:", error);
+      res.status(500).json({ error: "Failed to fetch configuration" });
+    }
+  });
+
+  // Update API configuration
+  app.put("/api/admin/social-media/config/:platform", authMiddleware, async (req, res) => {
+    try {
+      const { platform } = req.params;
+      const { clientId, clientSecret, apiKey, autoSyncEnabled, syncInterval, isPublished, isManualMode } = req.body;
+
+      const updateData: any = {};
+      if (clientId !== undefined) updateData.clientId = clientId;
+      if (clientSecret) updateData.clientSecret = encrypt(clientSecret);
+      if (apiKey) updateData.apiKey = encrypt(apiKey);
+      if (autoSyncEnabled !== undefined) updateData.autoSyncEnabled = autoSyncEnabled;
+      if (syncInterval) updateData.syncInterval = syncInterval;
+      if (isPublished !== undefined) updateData.isPublished = isPublished;
+      if (isManualMode !== undefined) updateData.isManualMode = isManualMode;
+
+      const config = await storage.updateSocialMediaApiConfig(platform, updateData);
+
+      // Update scheduler if auto-sync settings changed
+      if (autoSyncEnabled && syncInterval) {
+        schedulePlatformSync(platform as any, syncInterval);
+      } else if (autoSyncEnabled === false) {
+        stopPlatformSync(platform as any);
+      }
+
+      res.json(config);
+    } catch (error) {
+      console.error("Error updating social media config:", error);
+      res.status(500).json({ error: "Failed to update configuration" });
+    }
+  });
+
+  // Manual sync for specific platform
+  app.post("/api/admin/social-media/sync/:platform", authMiddleware, async (req, res) => {
+    try {
+      const { platform } = req.params;
+      const result = await syncPlatform(platform as any);
+      res.json(result);
+    } catch (error: any) {
+      console.error(`Error syncing ${req.params.platform}:`, error);
+      res.status(500).json({ error: error.message || "Sync failed" });
+    }
+  });
+
+  // Manual sync for all platforms
+  app.post("/api/admin/social-media/sync-all", authMiddleware, async (req, res) => {
+    try {
+      const results = await syncAllPlatforms();
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error syncing all platforms:", error);
+      res.status(500).json({ error: error.message || "Sync failed" });
+    }
+  });
+
+  // Get sync logs
+  app.get("/api/admin/social-media/sync-logs", authMiddleware, async (req, res) => {
+    try {
+      const { platform, limit } = req.query;
+      const logs = await storage.getSocialMediaSyncLogs(
+        platform as string | undefined,
+        limit ? parseInt(limit as string) : 50
+      );
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching sync logs:", error);
+      res.status(500).json({ error: "Failed to fetch sync logs" });
+    }
+  });
+
+  // Get current analytics for a platform
+  app.get("/api/admin/social-media/analytics/:platform", authMiddleware, async (req, res) => {
+    try {
+      const { platform } = req.params;
+      const analytics = await storage.getSocialMediaAnalytics(platform);
+      res.json(analytics || {
+        platform,
+        followersCount: "0",
+        engagementRate: "0",
+        impressions: "0",
+        likes: "0",
+        shares: "0",
+        comments: "0",
+        postsCount: "0"
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  // Update analytics manually (Manual Mode)
+  app.put("/api/admin/social-media/analytics/:platform", authMiddleware, async (req, res) => {
+    try {
+      const { platform } = req.params;
+      const data = req.body;
+      const updated = await storage.updateSocialMediaAnalytics(platform, data);
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update analytics" });
+    }
+  });
+
+  // OAuth initiation routes
+  app.get("/api/admin/social-media/connect/:platform", authMiddleware, async (req, res) => {
+    try {
+      const { platform } = req.params;
+      const config = await storage.getSocialMediaApiConfig(platform);
+
+      if (!config?.clientId) {
+        return res.status(400).json({ error: "Platform not configured. Please add API credentials first." });
+      }
+      const host = req.get('host') || '';
+      const protocol = host.includes('localhost') ? req.protocol : 'https';
+      const redirectUri = `${protocol}://${host}/api/admin/social-media/oauth/callback/${platform}`;
+      console.log(`📡 Initiating OAuth for ${platform} with redirect URI: ${redirectUri}`);
+      let authUrl: string;
+
+      const clientSecret = config.clientSecret ? decrypt(config.clientSecret) : '';
+
+      switch (platform) {
+        case 'youtube':
+          authUrl = YouTubeClient.getAuthUrl(config.clientId, clientSecret, redirectUri);
+          break;
+        case 'facebook':
+          authUrl = FacebookClient.getAuthUrl(config.clientId, redirectUri, 'facebook');
+          break;
+        case 'instagram':
+          authUrl = FacebookClient.getAuthUrl(config.clientId, redirectUri, 'instagram');
+          break;
+        case 'linkedin':
+          authUrl = LinkedInClient.getAuthUrl(config.clientId, redirectUri);
+          break;
+        case 'twitter':
+          authUrl = TwitterClient.getAuthUrl(config.clientId, redirectUri);
+          break;
+        default:
+          return res.status(400).json({ error: "Unsupported platform" });
+      }
+
+      res.json({ authUrl });
+    } catch (error: any) {
+      console.error("Error initiating OAuth:", error);
+      res.status(500).json({ error: error.message || "Failed to initiate OAuth" });
+    }
+  });
+
+  // OAuth callback routes
+  app.get("/api/admin/social-media/oauth/callback/:platform", async (req, res) => {
+    try {
+      const { platform } = req.params;
+      const { code, error: oauthError } = req.query;
+
+      if (oauthError) {
+        return res.redirect('/admin/social-media-integration?error=' + encodeURIComponent(oauthError as string));
+      }
+
+      if (!code) {
+        return res.status(400).send("Authorization code missing");
+      }
+
+      const config = await storage.getSocialMediaApiConfig(platform);
+      if (!config?.clientId) {
+        return res.status(400).send("Platform not configured");
+      }
+
+      const redirectUri = `${req.protocol}://${req.get('host')}/api/admin/social-media/oauth/callback/${platform}`;
+      let tokens: { accessToken: string; refreshToken: string };
+
+      const clientSecret = config.clientSecret ? decrypt(config.clientSecret) : '';
+
+      switch (platform) {
+        case 'youtube':
+          tokens = await YouTubeClient.exchangeCodeForTokens(code as string, config.clientId, clientSecret, redirectUri);
+          break;
+        case 'facebook':
+        case 'instagram':
+          tokens = await FacebookClient.exchangeCodeForTokens(code as string, config.clientId, clientSecret, redirectUri);
+          break;
+        case 'linkedin':
+          tokens = await LinkedInClient.exchangeCodeForTokens(code as string, config.clientId, clientSecret, redirectUri);
+          break;
+        case 'twitter':
+          tokens = await TwitterClient.exchangeCodeForTokens(code as string, config.clientId, clientSecret, redirectUri);
+          break;
+        default:
+          return res.status(400).send("Unsupported platform");
+      }
+
+      // Store encrypted tokens
+      await storage.updateSocialMediaIntegration(platform, {
+        isConnected: true,
+        accessToken: encrypt(tokens.accessToken),
+        refreshToken: tokens.refreshToken ? encrypt(tokens.refreshToken) : undefined,
+      });
+
+      // Redirect to admin page with success message
+      console.log(`✅ ${platform} tokens received and stored`);
+      res.redirect('/admin/social-media-integration?success=true&platform=' + platform);
+    } catch (error: any) {
+      console.error(`❌ OAuth callback error for ${req.params.platform}:`, error);
+      const errorMessage = error.message || "Unknown OAuth error";
+      res.redirect('/admin/social-media-integration?error=' + encodeURIComponent(errorMessage));
+    }
+  });
+
+  // Disconnect platform
+  app.delete("/api/admin/social-media/disconnect/:platform", authMiddleware, async (req, res) => {
+    try {
+      const { platform } = req.params;
+
+      await storage.updateSocialMediaIntegration(platform, {
+        isConnected: false,
+        accessToken: undefined,
+        refreshToken: undefined,
+      });
+
+      stopPlatformSync(platform as any);
+
+      console.log(`✅ ${platform} disconnected`);
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error disconnecting platform:", error);
+      res.status(500).json({ error: "Failed to disconnect platform" });
+    }
+  });
+
   return httpServer;
+
 }

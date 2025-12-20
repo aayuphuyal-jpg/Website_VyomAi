@@ -1,6 +1,6 @@
 import { useLocation, Link } from "wouter";
-import { 
-  LogOut, BarChart3, FileText, Users, DollarSign, BookOpen, MessageSquare, Settings, 
+import {
+  LogOut, BarChart3, FileText, Users, DollarSign, BookOpen, MessageSquare, Settings,
   Home, Share2, Mail, Menu, X, ChevronRight, Sparkles, UserCog
 } from "lucide-react";
 import { useState } from "react";
@@ -58,7 +58,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     {
       title: "Integrations",
       items: [
-        { label: "Social Media", href: "/admin/social-media", icon: Share2 },
+        { label: "Social Media", href: "/admin/social-media-integration", icon: Share2 },
         { label: "Email Settings", href: "/admin/email-settings", icon: Mail },
       ],
     },
@@ -77,7 +77,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <aside 
+      <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-gray-200 shadow-sm transition-all duration-300",
           sidebarOpen ? "w-72" : "w-20"
@@ -119,14 +119,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 {group.items.map((item) => {
                   const isActive = location?.includes(item.href);
                   const Icon = item.icon;
-                  
+
                   return (
                     <Link key={item.href} to={item.href}>
                       <div
                         className={cn(
                           "flex items-center gap-3 px-3 py-3 rounded-lg cursor-pointer transition-all",
-                          isActive 
-                            ? "bg-purple-600 text-white shadow-md" 
+                          isActive
+                            ? "bg-purple-600 text-white shadow-md"
                             : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                         )}
                       >
@@ -180,7 +180,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               Manage your {currentPage?.label?.toLowerCase() || "platform"}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />

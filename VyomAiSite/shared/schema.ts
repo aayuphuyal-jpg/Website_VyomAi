@@ -379,7 +379,7 @@ export type CustomerInquiry = z.infer<typeof customerInquirySchema>;
 export type InsertCustomerInquiry = z.infer<typeof insertCustomerInquirySchema>;
 
 // Drizzle ORM table definitions
-import { pgTable, varchar, text, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, boolean, timestamp, integer } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
   id: varchar("id").primaryKey(),
@@ -543,13 +543,13 @@ export const visitorStatsTable = pgTable("visitor_stats", {
 export const socialMediaAnalyticsTable = pgTable("social_media_analytics", {
   id: varchar("id").primaryKey(),
   platform: varchar("platform").notNull().unique(),
-  engagementRate: text("engagement_rate").default("0"),
-  followersCount: text("followers_count").default("0"),
-  postsCount: text("posts_count").default("0"),
-  impressions: text("impressions").default("0"),
-  likes: text("likes").default("0"),
-  shares: text("shares").default("0"),
-  comments: text("comments").default("0"),
+  engagementRate: integer("engagement_rate").default(0),
+  followersCount: integer("followers_count").default(0),
+  postsCount: integer("posts_count").default(0),
+  impressions: integer("impressions").default(0),
+  likes: integer("likes").default(0),
+  shares: integer("shares").default(0),
+  comments: integer("comments").default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -799,4 +799,71 @@ export const solutionItemsTable = pgTable("solution_items", {
   order: text("display_order").default("0"),
   enabled: boolean("enabled").default(true),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ============== SOCIAL MEDIA AUTO-SYNC SCHEMAS ==============
+
+// Social Media Sync Logs - Track sync history and errors
+export const socialMediaSyncLogSchema = z.object({
+  id: z.string(),
+  platform: z.enum(["linkedin", "instagram", "facebook", "whatsapp", "viber", "youtube", "twitter"]),
+  syncType: z.enum(["manual", "auto"]),
+  status: z.enum(["success", "failed", "partial"]),
+  metricsUpdated: z.array(z.string()).optional(), // Array of metric names that were updated
+  errorMessage: z.string().optional(),
+  syncedAt: z.string().optional(),
+});
+
+export const insertSocialMediaSyncLogSchema = socialMediaSyncLogSchema.omit({ id: true, syncedAt: true });
+export type SocialMediaSyncLog = z.infer<typeof socialMediaSyncLogSchema>;
+export type InsertSocialMediaSyncLog = z.infer<typeof insertSocialMediaSyncLogSchema>;
+
+// Social Media API Configuration - Store API credentials and sync settings
+export const socialMediaApiConfigSchema = z.object({
+  id: z.string(),
+  platform: z.enum(["linkedin", "instagram", "facebook", "whatsapp", "viber", "youtube", "twitter"]),
+  clientId: z.string().optional(),
+  clientSecret: z.string().optional(), // Will be encrypted
+  apiKey: z.string().optional(), // For platforms that use API keys
+  webhookSecret: z.string().optional(),
+  autoSyncEnabled: z.boolean().default(false),
+  syncInterval: z.enum(["15m", "30m", "1h", "6h", "24h"]).default("1h"),
+  isPublished: z.boolean().default(true),
+  isManualMode: z.boolean().default(false),
+  lastSyncAt: z.string().optional(),
+  nextSyncAt: z.string().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+
+export const insertSocialMediaApiConfigSchema = socialMediaApiConfigSchema.omit({ id: true, createdAt: true, updatedAt: true });
+export type SocialMediaApiConfig = z.infer<typeof socialMediaApiConfigSchema>;
+export type InsertSocialMediaApiConfig = z.infer<typeof insertSocialMediaApiConfigSchema>;
+
+// Drizzle ORM table definitions for social media auto-sync
+export const socialMediaSyncLogsTable = pgTable("social_media_sync_logs", {
+  id: varchar("id").primaryKey(),
+  platform: varchar("platform").notNull(),
+  syncType: varchar("sync_type").notNull(), // 'manual', 'auto'
+  status: varchar("status").notNull(), // 'success', 'failed', 'partial'
+  metricsUpdated: text("metrics_updated"), // JSON array of updated metrics
+  errorMessage: text("error_message"),
+  syncedAt: timestamp("synced_at").notNull().defaultNow(),
+});
+
+export const socialMediaApiConfigTable = pgTable("social_media_api_config", {
+  id: varchar("id").primaryKey(),
+  platform: varchar("platform").notNull().unique(),
+  clientId: varchar("client_id"),
+  clientSecret: text("client_secret"), // Encrypted
+  apiKey: text("api_key"), // Encrypted
+  webhookSecret: varchar("webhook_secret"),
+  autoSyncEnabled: boolean("auto_sync_enabled").default(false),
+  syncInterval: varchar("sync_interval").default("1h"), // '15m', '30m', '1h', '6h', '24h'
+  isPublished: boolean("is_published").default(true),
+  isManualMode: boolean("is_manual_mode").default(false),
+  lastSyncAt: timestamp("last_sync_at"),
+  nextSyncAt: timestamp("next_sync_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

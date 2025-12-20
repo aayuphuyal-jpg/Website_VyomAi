@@ -21,6 +21,14 @@ const PLATFORM_NAMES: Record<string, string> = {
   viber: "Viber",
 };
 
+function formatCount(count: string | number) {
+  const num = typeof count === 'string' ? parseInt(count.replace(/,/g, '')) : count;
+  if (isNaN(num)) return count;
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  return num.toString();
+}
+
 export function ConnectWithUs() {
   const { data: settings } = useQuery<SiteSettings>({
     queryKey: ["/api/settings"],
@@ -32,23 +40,14 @@ export function ConnectWithUs() {
 
   if (!settings) return null;
 
-  const isConnected = (platform: string) => {
-    return integrations.find((i: any) => i.platform === platform)?.isConnected ?? false;
-  };
-
-  const platforms = [
-    { key: "linkedin", label: "LinkedIn", url: settings.socialLinks?.linkedin },
-    { key: "instagram", label: "Instagram", url: settings.socialLinks?.instagram },
-    { key: "facebook", label: "Facebook", url: settings.socialLinks?.facebook },
-    { key: "youtube", label: "YouTube", url: settings.socialLinks?.youtube },
-    { key: "whatsapp", label: "WhatsApp", url: settings.socialLinks?.whatsapp },
-    { key: "viber", label: "Viber", url: settings.socialLinks?.viber },
-  ].filter(
-    (platform) =>
-      platform.url && 
-      isConnected(platform.key) &&
-      settings.socialMediaEnabled?.[platform.key as keyof typeof settings.socialMediaEnabled] !== false
-  );
+  // backend already filters by isPublished, we just need to map them to the UI
+  const platforms = integrations.map(i => ({
+    key: i.platform,
+    label: PLATFORM_NAMES[i.platform] || i.platform,
+    url: settings.socialLinks?.[i.platform as keyof typeof settings.socialLinks] || i.profileUrl,
+    followers: i.analytics?.followersCount || "0",
+    isConnected: i.isConnected
+  })).filter(p => p.url); // only show if there is a link
 
   if (platforms.length === 0) return null;
 
@@ -86,6 +85,13 @@ export function ConnectWithUs() {
                 <span className="text-sm md:text-base font-semibold text-foreground group-hover:text-primary transition-colors duration-300">
                   {PLATFORM_NAMES[platform.key] || platform.label}
                 </span>
+
+                {/* Followers Count */}
+                {platform.followers && platform.followers !== "0" && (
+                  <span className="text-xs text-muted-foreground mt-1">
+                    {formatCount(platform.followers)} {platform.key === 'youtube' ? 'Subscribers' : 'Followers'}
+                  </span>
+                )}
 
                 {/* Hover indicator */}
                 <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
