@@ -1,6 +1,16 @@
 {
     "version": 2,
+    "functions": {
+        "api/index.ts": {
+            "runtime": "@vercel/node",
+            "memory": 1024
+        }
+    },
     "rewrites": [
+        {
+            "source": "/api/(.*)",
+            "destination": "/api/index.ts"
+        },
         {
             "source": "/(.*)",
             "destination": "/api/index.ts"
