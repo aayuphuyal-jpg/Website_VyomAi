@@ -3,8 +3,8 @@
 ## Prerequisites
 
 1. **Cloud Database**: You need a PostgreSQL database accessible from the internet.
-   - **Recommended**: [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres) (easiest), [Neon](https://neon.tech), or [Supabase](https://supabase.com)
-   - Get your `DATABASE_URL` (format: `postgresql://user:password@host:port/database`)
+   - **Recommended**: [Neon](https://neon.tech) (Free, fast, and easy to set up)
+   - Get your **Connection String** (DATABASE_URL).
 
 2. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
 
