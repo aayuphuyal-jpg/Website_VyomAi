@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { WelcomePopup } from "@/components/welcome-popup";
+import { SpeedInsights } from "@/components/speed-insights";
 import Home from "@/pages/home";
 import AdminLoginQR from "@/pages/admin-login-qr";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -45,6 +46,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <WelcomePopup />
+          <SpeedInsights />
           <Router />
         </TooltipProvider>
       </ThemeProvider>
