@@ -29,7 +29,7 @@ app.use(
         imgSrc: ["'self'", "data:", "https:"],
         mediaSrc: ["'self'"],
         objectSrc: ["'none'"],
-        upgradeInsecureRequests: process.env.NODE_ENV === "production" ? [] : [],
+        upgradeInsecureRequests: process.env.NODE_ENV?.toLowerCase() === "production" ? [] : [],
       },
     },
   }),
@@ -78,7 +78,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.NODE_ENV?.toLowerCase() === "production",
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
@@ -136,7 +136,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 // importantly only setup vite in development and after
 // setting up all the other routes so the catch-all route
 // doesn't interfere with the other routes
-if (process.env.NODE_ENV === "production") {
+if (process.env.NODE_ENV?.toLowerCase() === "production" || process.env.VERCEL === "1") {
   serveStatic(app);
 } else {
   const { setupVite } = await import("./vite");

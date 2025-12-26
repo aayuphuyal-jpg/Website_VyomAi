@@ -4,22 +4,30 @@ import path from "path";
 
 export function serveStatic(app: Express) {
   const rootDir = process.cwd();
+  // On Vercel, the dist folder is included in the function bundle
   const distPath = path.resolve(rootDir, "dist", "public");
   
+  console.log(`Checking for static files at: ${distPath}`);
+
   if (!fs.existsSync(distPath)) {
-    // Fallback for some environments or local dev builds
-    const localDistPath = path.resolve(rootDir, "public");
-    if (fs.existsSync(localDistPath)) {
-      app.use(express.static(localDistPath));
+    console.error(`Status: dist/public NOT FOUND at ${distPath}`);
+    // Check if we are in the wrong directory or if build didn't include it
+    const altPath = path.resolve(rootDir, "public");
+    if (fs.existsSync(path.resolve(altPath, "index.html"))) {
+      console.log(`Found index.html in fallback path: ${altPath}`);
+      app.use(express.static(altPath));
       app.use("*", (_req, res) => {
-        res.sendFile(path.resolve(localDistPath, "index.html"));
+        res.sendFile(path.resolve(altPath, "index.html"));
       });
       return;
     }
 
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
+    // If we're on Vercel and can't find it, we might be in trouble
+    console.warn("Static files not found, falling back to minimal response");
+    app.get("*", (_req, res) => {
+      res.status(404).send("Application static files not found. Please check deployment configuration.");
+    });
+    return;
   }
 
   app.use(express.static(distPath));
