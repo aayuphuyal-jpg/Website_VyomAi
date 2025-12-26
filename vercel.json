@@ -3,7 +3,7 @@
     "functions": {
         "api/index.ts": {
             "memory": 1024,
-            "includeFiles": "dist/public/**"
+            "includeFiles": ["dist/public/**", "dist/server.js"]
         }
     },
     "rewrites": [
