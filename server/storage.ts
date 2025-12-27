@@ -174,14 +174,16 @@ export class MemStorage implements IStorage {
     });
     
     // Add test user for development/testing
-    const testPassword = bcryptjs.hashSync("test123", 10);
-    const testUserId = randomUUID();
-    this.users.set(testUserId, {
-      id: testUserId,
-      username: "aayuphuyal",
-      password: testPassword,
-      email: "aayu.phuyal@gmail.com",
-    });
+    if (process.env.NODE_ENV !== "production") {
+      const testPassword = bcryptjs.hashSync("test123", 10);
+      const testUserId = randomUUID();
+      this.users.set(testUserId, {
+        id: testUserId,
+        username: "aayuphuyal",
+        password: testPassword,
+        email: "aayu.phuyal@gmail.com",
+      });
+    }
     
     this.settings = {
       companyName: "VyomAi Cloud Pvt. Ltd",
@@ -209,13 +211,34 @@ export class MemStorage implements IStorage {
       showSolutionsSection: true,
       showMediaSection: true,
       showContactSection: true,
-      footerLogoUrl: "",
-      footerContactEmail: "info@vyomai.cloud",
-      footerAddress: "Tokha, Kathmandu, Nepal",
       showTeamSection: true,
       showPricingSection: true,
       showProjectDiscussionSection: true,
       bookingBotEnabled: true,
+      publishFooter: true,
+      defaultCurrency: "USD",
+      welcomePopupEnabled: false,
+      welcomePopupTitle: "Welcome",
+      welcomePopupMessage: "Welcome to our site",
+      welcomePopupButtonText: "Get Started",
+      welcomePopupImageUrl: "",
+      welcomePopupAnimationStyle: "fade",
+      welcomePopupDismissable: true,
+      emailProvider: "smtp",
+      emailFromName: "VyomAi",
+      emailFromAddress: "info@vyomai.cloud",
+      smtpPort: "587",
+      smtpSecure: false,
+      emailProviderPriority: "smtp,gmail,sendgrid",
+      socialMediaEnabled: {
+        linkedin: true,
+        instagram: true,
+        facebook: true,
+        whatsapp: true,
+        viber: true,
+        youtube: true
+      },
+      exchangeRates: { USD: 1, EUR: 0.92, INR: 83.12, NPR: 132.5 },
     };
     
     this.visitorStats = {
@@ -270,7 +293,7 @@ export class MemStorage implements IStorage {
         title: "Getting Started with AI Agents for Your Business",
         content: "Artificial Intelligence agents are transforming how businesses operate. In this article, we explore how AI agents can automate repetitive tasks, provide intelligent insights, and enhance customer experiences. VyomAi specializes in creating custom AI solutions that integrate seamlessly with your existing workflows.",
         type: "article",
-        thumbnailUrl: "",
+        thumbnailUrl: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80",
         mediaUrl: "",
         published: true,
         createdAt: new Date().toISOString(),
@@ -279,9 +302,9 @@ export class MemStorage implements IStorage {
         id: randomUUID(),
         title: "Microsoft 365 Integration Demo",
         content: "Watch how VyomAi's intelligent agents integrate with Microsoft 365 to automate email responses, schedule meetings, and analyze documents. Our solutions work within your existing Microsoft ecosystem.",
-        type: "demo",
-        thumbnailUrl: "",
-        mediaUrl: "",
+        type: "video",
+        thumbnailUrl: "https://images.unsplash.com/photo-1633419461186-7d40a239337d?w=800&q=80",
+        mediaUrl: "https://www.youtube.com/embed/ScSz2V22hQQ",
         published: true,
         createdAt: new Date(Date.now() - 86400000).toISOString(),
       },
@@ -290,8 +313,8 @@ export class MemStorage implements IStorage {
         title: "AI-Powered Analytics: A Quick Overview",
         content: "Learn how AI-powered analytics can transform raw data into actionable insights. This video tutorial covers the basics of implementing intelligent analytics in your organization.",
         type: "video",
-        thumbnailUrl: "",
-        mediaUrl: "",
+        thumbnailUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
+        mediaUrl: "https://www.youtube.com/embed/H71mC-Fv8Fk",
         published: true,
         createdAt: new Date(Date.now() - 172800000).toISOString(),
       },
@@ -310,6 +333,10 @@ export class MemStorage implements IStorage {
         description: "Perfect for small businesses",
         features: ["Basic AI Agent", "Email Integration", "5 Templates", "Email Support"],
         highlighted: false,
+        enabled: true,
+        contactMessage: "Get Started",
+        floatingCloudEnabled: false,
+        baseCurrency: "USD",
         createdAt: new Date().toISOString(),
       },
       {
@@ -319,6 +346,10 @@ export class MemStorage implements IStorage {
         description: "For growing teams",
         features: ["Advanced AI Agent", "Multi-Platform Integration", "20 Templates", "Priority Support", "Analytics Dashboard"],
         highlighted: true,
+        enabled: true,
+        contactMessage: "Get Started",
+        floatingCloudEnabled: false,
+        baseCurrency: "USD",
         createdAt: new Date().toISOString(),
       },
       {
@@ -328,6 +359,10 @@ export class MemStorage implements IStorage {
         description: "For large organizations",
         features: ["Custom AI Agent", "Full Integration", "Unlimited Templates", "24/7 Support", "Advanced Analytics", "Dedicated Account Manager"],
         highlighted: false,
+        enabled: true,
+        contactMessage: "Contact Sales",
+        floatingCloudEnabled: true,
+        baseCurrency: "USD",
         createdAt: new Date().toISOString(),
       },
     ];
@@ -355,16 +390,16 @@ export class MemStorage implements IStorage {
         followersCount: Math.floor(Math.random() * 50000) + 1000,
         postsCount: Math.floor(Math.random() * 200) + 10,
         impressions: Math.floor(Math.random() * 500000) + 10000,
-        clicks: Math.floor(Math.random() * 100000) + 1000,
-        conversions: Math.floor(Math.random() * 5000) + 100,
-        lastUpdated: new Date().toISOString(),
+        likes: Math.floor(Math.random() * 1000) + 10,
+        shares: Math.floor(Math.random() * 500) + 5,
+        comments: Math.floor(Math.random() * 200) + 2,
         createdAt: new Date().toISOString(),
       });
 
       this.socialMediaIntegrations.set(platform, {
         id: randomUUID(),
         platform,
-        connected: false,
+        isConnected: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
@@ -558,9 +593,8 @@ export class MemStorage implements IStorage {
   }
 
   async getPricingPackages(): Promise<PricingPackage[]> {
-    return Array.from(this.pricingPackages.values()).sort(
-      (a, b) => a.price - b.price
-    );
+    const items = Array.from(this.pricingPackages.values());
+    return items.sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
   }
 
   async getPricingPackage(id: string): Promise<PricingPackage | undefined> {
@@ -657,14 +691,20 @@ export class MemStorage implements IStorage {
         id: randomUUID(),
         platform: platform as any,
         ...data,
-        lastUpdated: new Date().toISOString(),
+        likes: data.likes ?? 0,
+        shares: data.shares ?? 0,
+        comments: data.comments ?? 0,
+        impressions: data.impressions ?? 0,
+        engagementRate: data.engagementRate ?? 0,
+        followersCount: data.followersCount ?? 0,
+        postsCount: data.postsCount ?? 0,
         createdAt: new Date().toISOString(),
       };
       this.socialMediaAnalytics.set(platform, newAnalytic);
       return newAnalytic;
     }
 
-    const updated: SocialMediaAnalytics = { ...existing, ...data, lastUpdated: new Date().toISOString() };
+    const updated: SocialMediaAnalytics = { ...existing, ...data };
     this.socialMediaAnalytics.set(platform, updated);
     return updated;
   }
@@ -678,10 +718,10 @@ export class MemStorage implements IStorage {
         engagementRate: 0,
         followersCount: 0,
         postsCount: 0,
+        likes: 0,
+        shares: 0,
+        comments: 0,
         impressions: 0,
-        clicks: 0,
-        conversions: 0,
-        lastUpdated: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       });
     });
@@ -729,6 +769,7 @@ export class MemStorage implements IStorage {
       const newIntegration: SocialMediaIntegration = {
         id: randomUUID(),
         platform: platform as any,
+        isConnected: false,
         ...data,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

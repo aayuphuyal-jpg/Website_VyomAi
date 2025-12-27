@@ -131,6 +131,7 @@ export class DatabaseStorage implements IStorage {
 
   private async initializeDefaultUsers(): Promise<void> {
     try {
+      if (!db) return;
       // Initialize admin user
       const adminUsername = process.env.ADMIN_USERNAME || "admin";
       const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
@@ -183,6 +184,7 @@ export class DatabaseStorage implements IStorage {
 
   private async initializeDefaultSettings(): Promise<void> {
     try {
+      if (!db) return;
       const existingSettings = await db.select().from(siteSettingsTable).limit(1);
       if (existingSettings.length === 0) {
         const settingsId = randomUUID();
@@ -229,31 +231,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUser(id: string): Promise<User | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const user = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
     return user[0] as User | undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const user = await db.select().from(usersTable).where(eq(usersTable.username, username)).limit(1);
     return user[0] as User | undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const user = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
     return user[0] as User | undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    if (!db) throw new Error("Database not initialized");
     try {
       const id = randomUUID();
-      const user: User = { ...insertUser, id, password: insertUser.password };
+      const user: any = { ...insertUser, id, password: insertUser.password };
       const result = await db.insert(usersTable).values(user).returning();
 
       if (!result || result.length === 0) {
         throw new Error("Database returned empty result for user creation");
       }
 
-      const created = result[0] as User;
+      const created = result[0] as unknown as User;
       return created;
     } catch (error) {
       console.error("❌ DB: User creation failed:", error);
@@ -262,26 +268,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllUsers(): Promise<User[]> {
+    if (!db) throw new Error("Database not initialized");
     const users = await db.select().from(usersTable);
-    return users as User[];
+    return users as unknown as User[];
   }
 
   async updateUser(id: string, data: Partial<any>): Promise<User | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.update(usersTable).set(data).where(eq(usersTable.id, id)).returning();
-    return result[0] as User | undefined;
+    return result[0] as unknown as User | undefined;
   }
 
   async updateUserPassword(id: string, hashedPassword: string): Promise<User | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.update(usersTable).set({ password: hashedPassword }).where(eq(usersTable.id, id)).returning();
-    return result[0] as User | undefined;
+    return result[0] as unknown as User | undefined;
   }
 
   async deleteUser(id: string): Promise<boolean> {
+    if (!db) throw new Error("Database not initialized");
     await db.delete(usersTable).where(eq(usersTable.id, id));
     return true;
   }
 
   async getArticles(): Promise<Article[]> {
+    if (!db) throw new Error("Database not initialized");
     const articles = await db.select().from(articlesTable);
     return articles.map(a => ({
       ...a,
@@ -290,6 +301,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getArticle(id: string): Promise<Article | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const article = await db.select().from(articlesTable).where(eq(articlesTable.id, id)).limit(1);
     if (!article[0]) return undefined;
     return {
@@ -299,6 +311,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createArticle(article: InsertArticle): Promise<Article> {
+    if (!db) throw new Error("Database not initialized");
     const id = randomUUID();
     const now = new Date();
     const result = await db.insert(articlesTable).values({ id, ...article, createdAt: now }).returning();
@@ -310,6 +323,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateArticle(id: string, article: Partial<InsertArticle>): Promise<Article | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.update(articlesTable).set(article).where(eq(articlesTable.id, id)).returning();
     if (!result[0]) return undefined;
     return {
@@ -319,11 +333,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteArticle(id: string): Promise<boolean> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.delete(articlesTable).where(eq(articlesTable.id, id));
     return true;
   }
 
   async getTeamMembers(): Promise<TeamMember[]> {
+    if (!db) throw new Error("Database not initialized");
     const members = await db.select().from(teamMembersTable);
     return members.map(m => ({
       ...m,
@@ -332,6 +348,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTeamMember(id: string): Promise<TeamMember | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const member = await db.select().from(teamMembersTable).where(eq(teamMembersTable.id, id)).limit(1);
     if (!member[0]) return undefined;
     return {
@@ -341,6 +358,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTeamMember(member: InsertTeamMember): Promise<TeamMember> {
+    if (!db) throw new Error("Database not initialized");
     const id = randomUUID();
     const now = new Date();
     const result = await db.insert(teamMembersTable).values({ id, ...member, createdAt: now }).returning();
@@ -352,6 +370,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateTeamMember(id: string, member: Partial<InsertTeamMember>): Promise<TeamMember | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.update(teamMembersTable).set(member).where(eq(teamMembersTable.id, id)).returning();
     if (!result[0]) return undefined;
     return {
@@ -361,11 +380,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTeamMember(id: string): Promise<boolean> {
+    if (!db) throw new Error("Database not initialized");
     await db.delete(teamMembersTable).where(eq(teamMembersTable.id, id));
     return true;
   }
 
   async getPricingPackages(): Promise<PricingPackage[]> {
+    if (!db) throw new Error("Database not initialized");
     const packages = await db.select().from(pricingPackagesTable);
     return packages.map(pkg => {
       let features: string[] = [];
@@ -400,6 +421,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPricingPackage(id: string): Promise<PricingPackage | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const pkg = await db.select().from(pricingPackagesTable).where(eq(pricingPackagesTable.id, id)).limit(1);
     if (!pkg[0]) return undefined;
 
@@ -434,6 +456,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPricingPackage(pkg: InsertPricingPackage): Promise<PricingPackage> {
+    if (!db) throw new Error("Database not initialized");
     const id = randomUUID();
     const now = new Date();
     const result = await db.insert(pricingPackagesTable).values({
@@ -460,6 +483,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updatePricingPackage(id: string, pkg: Partial<InsertPricingPackage>): Promise<PricingPackage | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const updateData: any = { ...pkg };
     if (pkg.features) {
       updateData.features = JSON.stringify(pkg.features);
@@ -473,9 +497,7 @@ export class DatabaseStorage implements IStorage {
     if (pkg.yearlyPrice !== undefined) {
       updateData.yearlyPrice = pkg.yearlyPrice ? String(pkg.yearlyPrice) : null;
     }
-    if (pkg.oneTimePrice !== undefined) {
-      updateData.oneTimePrice = pkg.oneTimePrice ? String(pkg.oneTimePrice) : null;
-    }
+    // Remove oneTimePrice from here if it's not in the insert schema, or add it to schema
     const result = await db.update(pricingPackagesTable).set(updateData).where(eq(pricingPackagesTable.id, id)).returning();
     if (!result[0]) return undefined;
     return {
@@ -484,63 +506,99 @@ export class DatabaseStorage implements IStorage {
       price: typeof result[0].price === 'string' ? parseInt(result[0].price) : result[0].price,
       monthlyPrice: result[0].monthlyPrice ? parseInt(result[0].monthlyPrice) : undefined,
       yearlyPrice: result[0].yearlyPrice ? parseInt(result[0].yearlyPrice) : undefined,
-      oneTimePrice: result[0].oneTimePrice ? parseInt(result[0].oneTimePrice) : undefined
+      createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
     } as PricingPackage;
   }
 
   async deletePricingPackage(id: string): Promise<boolean> {
+    if (!db) throw new Error("Database not initialized");
     await db.delete(pricingPackagesTable).where(eq(pricingPackagesTable.id, id));
     return true;
   }
 
   async getProjectDiscussion(): Promise<ProjectDiscussion | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.select().from(projectDiscussionTable).limit(1);
-    return result[0] as ProjectDiscussion | undefined;
+    if (!result[0]) return undefined;
+    
+    return {
+        ...result[0],
+        createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
+    } as ProjectDiscussion;
   }
 
   async updateProjectDiscussion(data: InsertProjectDiscussion): Promise<ProjectDiscussion> {
+    if (!db) throw new Error("Database not initialized");
     const existing = await this.getProjectDiscussion();
     if (existing) {
       const result = await db.update(projectDiscussionTable).set(data).where(eq(projectDiscussionTable.id, existing.id)).returning();
-      return result[0] as ProjectDiscussion;
+      return {
+        ...result[0],
+        createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
+      } as ProjectDiscussion;
     }
     const id = randomUUID();
     const now = new Date();
     const result = await db.insert(projectDiscussionTable).values({ id, ...data, createdAt: now }).returning();
-    return result[0] as ProjectDiscussion;
+    return {
+        ...result[0],
+        createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
+      } as ProjectDiscussion;
   }
 
   async getBookingRequests(): Promise<BookingRequest[]> {
-    if (!db) return [];
-    return db.select().from(bookingRequestsTable) as any;
+    if (!db) throw new Error("Database not initialized");
+    const requests = await db.select().from(bookingRequestsTable);
+    return requests.map(r => ({
+        ...r,
+        createdAt: typeof r.createdAt === 'string' ? r.createdAt : (r.createdAt as Date).toISOString()
+    })) as BookingRequest[];
   }
 
   async createBookingRequest(booking: InsertBookingRequest): Promise<BookingRequest> {
+    if (!db) throw new Error("Database not initialized");
     const id = randomUUID();
     const now = new Date();
     const result = await db.insert(bookingRequestsTable).values({ id, ...booking, createdAt: now }).returning();
-    return result[0] as BookingRequest;
+    return {
+        ...result[0],
+        createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
+    } as BookingRequest;
   }
 
   async updateBookingRequest(id: string, booking: Partial<InsertBookingRequest>): Promise<BookingRequest | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.update(bookingRequestsTable).set(booking).where(eq(bookingRequestsTable.id, id)).returning();
-    return result[0] as BookingRequest | undefined;
+    if (!result[0]) return undefined;
+    return {
+        ...result[0],
+        createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
+    } as BookingRequest;
   }
 
   async deleteBookingRequest(id: string): Promise<boolean> {
+    if (!db) throw new Error("Database not initialized");
     await db.delete(bookingRequestsTable).where(eq(bookingRequestsTable.id, id));
     return true;
   }
 
   async resetBookingRequests(): Promise<void> {
+    if (!db) throw new Error("Database not initialized");
     await db.delete(bookingRequestsTable);
   }
 
   async getOneTimePricingRequests(): Promise<OneTimePricingRequest[]> {
-    return db.select().from(oneTimePricingRequestsTable) as Promise<OneTimePricingRequest[]>;
+     if (!db) throw new Error("Database not initialized");
+     const requests = await db.select().from(oneTimePricingRequestsTable);
+     return requests.map(r => ({
+           ...r,
+           estimatedPrice: typeof r.estimatedPrice === 'string' ? parseInt(r.estimatedPrice) : r.estimatedPrice,
+           createdAt: typeof r.createdAt === 'string' ? r.createdAt : (r.createdAt as Date).toISOString()
+     })) as OneTimePricingRequest[];
   }
 
   async createOneTimePricingRequest(request: InsertOneTimePricingRequest): Promise<OneTimePricingRequest> {
+    if (!db) throw new Error("Database not initialized");
     const id = randomUUID();
     const now = new Date();
     const result = await db.insert(oneTimePricingRequestsTable).values({
@@ -551,7 +609,8 @@ export class DatabaseStorage implements IStorage {
     }).returning();
     return {
       ...result[0],
-      estimatedPrice: typeof result[0].estimatedPrice === 'string' ? parseInt(result[0].estimatedPrice) : result[0].estimatedPrice
+      estimatedPrice: typeof result[0].estimatedPrice === 'string' ? parseInt(result[0].estimatedPrice) : result[0].estimatedPrice,
+      createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
     } as OneTimePricingRequest;
   }
 
@@ -560,29 +619,51 @@ export class DatabaseStorage implements IStorage {
     if (request.estimatedPrice !== undefined) {
       updateData.estimatedPrice = String(request.estimatedPrice);
     }
+    if (!db) throw new Error("Database not initialized");
     const result = await db.update(oneTimePricingRequestsTable).set(updateData).where(eq(oneTimePricingRequestsTable.id, id)).returning();
     if (!result[0]) return undefined;
     return {
       ...result[0],
-      estimatedPrice: typeof result[0].estimatedPrice === 'string' ? parseInt(result[0].estimatedPrice) : result[0].estimatedPrice
+      estimatedPrice: typeof result[0].estimatedPrice === 'string' ? parseInt(result[0].estimatedPrice) : result[0].estimatedPrice,
+      createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
     } as OneTimePricingRequest;
   }
 
   async deleteOneTimePricingRequest(id: string): Promise<boolean> {
+    if (!db) throw new Error("Database not initialized");
     await db.delete(oneTimePricingRequestsTable).where(eq(oneTimePricingRequestsTable.id, id));
     return true;
   }
 
   async getSettings(): Promise<SiteSettings> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.select().from(siteSettingsTable).limit(1);
     if (result[0]) {
       const settings = result[0];
       return {
         ...settings,
         socialLinks: typeof settings.socialLinks === 'string' ? JSON.parse(settings.socialLinks) : settings.socialLinks,
-      } as SiteSettings;
+        exchangeRates: typeof settings.exchangeRates === 'string' ? JSON.parse(settings.exchangeRates) : settings.exchangeRates,
+        socialMediaEnabled: {
+          linkedin: true,
+          instagram: true,
+          facebook: true,
+          whatsapp: true,
+          viber: true,
+          youtube: true
+        }
+      } as unknown as SiteSettings;
     }
-    return {} as SiteSettings;
+    return {
+      socialMediaEnabled: {
+          linkedin: true,
+          instagram: true,
+          facebook: true,
+          whatsapp: true,
+          viber: true,
+          youtube: true
+      }
+    } as SiteSettings;
   }
 
   async updateSettings(settings: Partial<SiteSettings>): Promise<SiteSettings> {
@@ -593,9 +674,13 @@ export class DatabaseStorage implements IStorage {
       if (settings.socialLinks && typeof settings.socialLinks === 'object') {
         dataToSave.socialLinks = JSON.stringify(settings.socialLinks);
       }
+      if (settings.exchangeRates && typeof settings.exchangeRates === 'object') {
+        dataToSave.exchangeRates = JSON.stringify(settings.exchangeRates);
+      }
 
-      if (existing && existing.id) {
-        const result = await db.update(siteSettingsTable).set(dataToSave).where(eq(siteSettingsTable.id, existing.id)).returning();
+      if (existing && (existing as any).id) {
+        if (!db) throw new Error("Database not initialized");
+        const result = await db.update(siteSettingsTable).set(dataToSave).where(eq(siteSettingsTable.id, (existing as any).id)).returning();
         if (!result[0]) {
           throw new Error("Update returned no results");
         }
@@ -603,7 +688,16 @@ export class DatabaseStorage implements IStorage {
         return {
           ...updated,
           socialLinks: typeof updated.socialLinks === 'string' ? JSON.parse(updated.socialLinks) : updated.socialLinks,
-        } as SiteSettings;
+          exchangeRates: typeof updated.exchangeRates === 'string' ? JSON.parse(updated.exchangeRates) : updated.exchangeRates,
+          socialMediaEnabled: {
+            linkedin: true,
+            instagram: true,
+            facebook: true,
+            whatsapp: true,
+            viber: true,
+            youtube: true
+          }
+        } as unknown as SiteSettings;
       }
 
       // Create new record with defaults for required fields
@@ -617,9 +711,11 @@ export class DatabaseStorage implements IStorage {
         aboutText: settings.aboutText || "Welcome to VyomAi",
         missionText: settings.missionText || "Empowering businesses with AI",
         socialLinks: dataToSave.socialLinks || JSON.stringify({}),
+        exchangeRates: dataToSave.exchangeRates || JSON.stringify({ USD: 1, EUR: 0.92, INR: 83.12, NPR: 132.5 }),
         ...dataToSave,
       };
 
+      if (!db) throw new Error("Database not initialized");
       const result = await db.insert(siteSettingsTable).values(newSettings).returning();
       if (!result[0]) {
         throw new Error("Insert returned no results");
@@ -628,6 +724,15 @@ export class DatabaseStorage implements IStorage {
       return {
         ...created,
         socialLinks: typeof created.socialLinks === 'string' ? JSON.parse(created.socialLinks) : created.socialLinks,
+        exchangeRates: typeof created.exchangeRates === 'string' ? JSON.parse(created.exchangeRates) : created.exchangeRates,
+        socialMediaEnabled: {
+            linkedin: true,
+            instagram: true,
+            facebook: true,
+            whatsapp: true,
+            viber: true,
+            youtube: true
+        }
       } as SiteSettings;
     } catch (error) {
       if (process.env.NODE_ENV !== "production") {
@@ -638,6 +743,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getVisitorStats(): Promise<VisitorStats> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.select().from(visitorStatsTable).limit(1);
     if (result[0]) {
       const stats = result[0];
@@ -657,6 +763,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateVisitorStats(data: Partial<VisitorStats>): Promise<VisitorStats> {
     try {
+      if (!db) throw new Error("Database not initialized");
       const existing = await db.select().from(visitorStatsTable).limit(1);
       const updateData: any = {};
 
@@ -730,14 +837,22 @@ export class DatabaseStorage implements IStorage {
 
 
   async resetSocialMediaAnalytics(): Promise<void> {
+    if (!db) throw new Error("Database not initialized");
     await db.delete(socialMediaAnalyticsTable);
   }
 
   async getSocialMediaIntegrations(): Promise<SocialMediaIntegration[]> {
-    return db.select().from(socialMediaIntegrationsTable) as Promise<SocialMediaIntegration[]>;
+    if (!db) throw new Error("Database not initialized");
+    const result = await db.select().from(socialMediaIntegrationsTable);
+      return result.map(r => ({
+          ...r,
+          createdAt: typeof r.createdAt === 'string' ? r.createdAt : (r.createdAt as Date).toISOString(),
+          updatedAt: typeof r.updatedAt === 'string' ? r.updatedAt : (r.updatedAt as Date).toISOString()
+      })) as SocialMediaIntegration[];
   }
 
   async getSocialMediaIntegration(platform: string): Promise<SocialMediaIntegration | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.select().from(socialMediaIntegrationsTable).where(eq(socialMediaIntegrationsTable.platform, platform)).limit(1);
     if (!result[0]) return undefined;
     return {
@@ -749,23 +864,36 @@ export class DatabaseStorage implements IStorage {
 
   async updateSocialMediaIntegration(platform: string, data: Partial<InsertSocialMediaIntegration>): Promise<SocialMediaIntegration> {
     const existing = await this.getSocialMediaIntegration(platform);
+    if (!db) throw new Error("Database not initialized");
     if (existing) {
-      if (!db) throw new Error("Database not initialized");
       const result = await db.update(socialMediaIntegrationsTable).set({ ...data, updatedAt: new Date() } as any).where(eq(socialMediaIntegrationsTable.platform, platform)).returning();
-      return result[0] as SocialMediaIntegration;
+      return {
+          ...result[0],
+          createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString(),
+          updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString(),
+      } as SocialMediaIntegration;
     }
     const id = randomUUID();
     const now = new Date();
     const result = await db.insert(socialMediaIntegrationsTable).values({ id, platform: platform as any, ...data, createdAt: now, updatedAt: now } as any).returning();
-    return result[0] as SocialMediaIntegration;
+    return {
+          ...result[0],
+          createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString(),
+          updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString(),
+      } as SocialMediaIntegration;
   }
 
   async getCustomerInquiries(): Promise<CustomerInquiry[]> {
     if (!db) return [];
-    return db.select().from(customerInquiriesTable) as Promise<CustomerInquiry[]>;
+    const inquiries = await db.select().from(customerInquiriesTable);
+    return inquiries.map(i => ({
+        ...i,
+        createdAt: typeof i.createdAt === 'string' ? i.createdAt : (i.createdAt as Date).toISOString()
+    })) as CustomerInquiry[];
   }
 
   async createCustomerInquiry(inquiry: InsertCustomerInquiry): Promise<CustomerInquiry> {
+    if (!db) throw new Error("Database not initialized");
     const id = randomUUID();
     const now = new Date();
     const result = await db.insert(customerInquiriesTable).values({ id, ...inquiry, createdAt: now } as any).returning();
@@ -776,11 +904,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCustomerInquiry(id: string, inquiry: Partial<InsertCustomerInquiry>): Promise<CustomerInquiry | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.update(customerInquiriesTable).set(inquiry).where(eq(customerInquiriesTable.id, id)).returning();
-    return result[0] as CustomerInquiry | undefined;
+    if (!result[0]) return undefined;
+    return {
+        ...result[0],
+        createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
+    } as CustomerInquiry;
   }
 
   async deleteCustomerInquiry(id: string): Promise<boolean> {
+    if (!db) throw new Error("Database not initialized");
     await db.delete(customerInquiriesTable).where(eq(customerInquiriesTable.id, id));
     return true;
   }
@@ -809,20 +943,41 @@ export class DatabaseStorage implements IStorage {
 
   // Popup Forms Methods
   async getPopupForms(): Promise<PopupForm[]> {
-    return db.select().from(popupFormsTable) as Promise<PopupForm[]>;
+    if (!db) throw new Error("Database not initialized");
+    const forms = await db.select().from(popupFormsTable);
+    return forms.map(f => ({
+      ...f,
+      createdAt: typeof f.createdAt === 'string' ? f.createdAt : (f.createdAt as Date).toISOString(),
+      updatedAt: typeof f.updatedAt === 'string' ? f.updatedAt : (f.updatedAt as Date).toISOString()
+    })) as PopupForm[];
   }
 
   async getPopupForm(id: string): Promise<PopupForm | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.select().from(popupFormsTable).where(eq(popupFormsTable.id, id));
-    return result[0] as PopupForm | undefined;
+    if (!result[0]) return undefined;
+    
+    return {
+      ...result[0],
+      createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString(),
+      updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()
+    } as PopupForm;
   }
 
   async getActivePopupForm(): Promise<PopupForm | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.select().from(popupFormsTable).where(eq(popupFormsTable.enabled, true));
-    return result[0] as PopupForm | undefined;
+    if (!result[0]) return undefined;
+
+    return {
+      ...result[0],
+      createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString(),
+      updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()
+    } as PopupForm;
   }
 
   async createPopupForm(form: InsertPopupForm): Promise<PopupForm> {
+    if (!db) throw new Error("Database not initialized");
     const id = randomUUID();
     const now = new Date();
     const result = await db.insert(popupFormsTable).values({
@@ -831,18 +986,32 @@ export class DatabaseStorage implements IStorage {
       createdAt: now,
       updatedAt: now
     } as any).returning();
-    return result[0] as PopupForm;
+
+    return {
+      ...result[0],
+      createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString(),
+      updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()
+    } as PopupForm;
   }
 
   async updatePopupForm(id: string, form: Partial<InsertPopupForm>): Promise<PopupForm | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.update(popupFormsTable)
       .set({ ...form, updatedAt: new Date() } as any)
       .where(eq(popupFormsTable.id, id))
       .returning();
-    return result[0] as PopupForm | undefined;
+      
+    if (!result[0]) return undefined;
+
+    return {
+      ...result[0],
+      createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString(),
+      updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()
+    } as PopupForm;
   }
 
   async deletePopupForm(id: string): Promise<boolean> {
+    if (!db) throw new Error("Database not initialized");
     await db.delete(popupFormsTable).where(eq(popupFormsTable.id, id));
     return true;
   }
@@ -851,129 +1020,236 @@ export class DatabaseStorage implements IStorage {
 
   // Hero Content
   async getHeroContent(): Promise<HeroContent | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.select().from(heroContentTable).limit(1);
-    return result[0] as HeroContent | undefined;
+    if (!result[0]) return undefined;
+    return {
+      ...result[0],
+      updatedAt: result[0].updatedAt ? (typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()) : undefined
+    } as HeroContent;
   }
 
   async updateHeroContent(data: Partial<InsertHeroContent>): Promise<HeroContent> {
+    if (!db) throw new Error("Database not initialized");
     const existing = await this.getHeroContent();
     if (existing) {
       const result = await db.update(heroContentTable).set({ ...data, updatedAt: new Date() }).where(eq(heroContentTable.id, existing.id)).returning();
-      return result[0] as HeroContent;
+      return {
+        ...result[0],
+        updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()
+      } as HeroContent;
     }
     const id = randomUUID();
     const result = await db.insert(heroContentTable).values({ id, ...data, updatedAt: new Date() } as any).returning();
-    return result[0] as HeroContent;
+    return {
+        ...result[0],
+        updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()
+      } as HeroContent;
   }
 
   // About Content
   async getAboutContent(): Promise<AboutContent | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.select().from(aboutContentTable).limit(1);
-    return result[0] as AboutContent | undefined;
+    if (!result[0]) return undefined;
+    return {
+      ...result[0],
+      updatedAt: result[0].updatedAt ? (typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()) : undefined
+    } as AboutContent;
   }
 
   async updateAboutContent(data: Partial<InsertAboutContent>): Promise<AboutContent> {
+    if (!db) throw new Error("Database not initialized");
     const existing = await this.getAboutContent();
     if (existing) {
       const result = await db.update(aboutContentTable).set({ ...data, updatedAt: new Date() }).where(eq(aboutContentTable.id, existing.id)).returning();
-      return result[0] as AboutContent;
+      return {
+        ...result[0],
+        updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()
+      } as AboutContent;
     }
     const id = randomUUID();
     const result = await db.insert(aboutContentTable).values({ id, ...data, updatedAt: new Date() } as any).returning();
-    return result[0] as AboutContent;
-  }
+    return {
+        ...result[0],
+        updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()
+      } as AboutContent;
+    }
 
   // About Values
   async getAboutValues(): Promise<AboutValue[]> {
-    return db.select().from(aboutValuesTable).orderBy(aboutValuesTable.order) as Promise<AboutValue[]>;
+    if (!db) throw new Error("Database not initialized");
+    const values = await db.select().from(aboutValuesTable).orderBy(aboutValuesTable.order);
+    return values.map(v => ({
+      ...v,
+      order: typeof v.order === 'string' ? parseInt(v.order) : v.order,
+      createdAt: typeof v.createdAt === 'string' ? v.createdAt : (v.createdAt as Date).toISOString()
+    })) as AboutValue[];
   }
 
   async createAboutValue(value: InsertAboutValue): Promise<AboutValue> {
+    if (!db) throw new Error("Database not initialized");
     const id = randomUUID();
-    const result = await db.insert(aboutValuesTable).values({ id, ...value, createdAt: new Date() } as any).returning();
-    return result[0] as AboutValue;
+    const result = await db.insert(aboutValuesTable).values({ 
+      id, 
+      ...value, 
+      order: String(value.order),
+      createdAt: new Date() 
+    } as any).returning();
+    return {
+      ...result[0],
+      order: typeof result[0].order === 'string' ? parseInt(result[0].order) : result[0].order,
+      createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
+    } as AboutValue;
   }
 
   async updateAboutValue(id: string, value: Partial<InsertAboutValue>): Promise<AboutValue | undefined> {
-    const result = await db.update(aboutValuesTable).set(value).where(eq(aboutValuesTable.id, id)).returning();
-    return result[0] as AboutValue | undefined;
+    if (!db) throw new Error("Database not initialized");
+    const updateData: any = { ...value };
+    if (value.order !== undefined) {
+      updateData.order = String(value.order);
+    }
+    const result = await db.update(aboutValuesTable).set(updateData).where(eq(aboutValuesTable.id, id)).returning();
+    if (!result[0]) return undefined;
+    return {
+      ...result[0],
+      order: typeof result[0].order === 'string' ? parseInt(result[0].order) : result[0].order,
+      createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
+    } as AboutValue;
   }
 
   async deleteAboutValue(id: string): Promise<boolean> {
+    if (!db) throw new Error("Database not initialized");
     await db.delete(aboutValuesTable).where(eq(aboutValuesTable.id, id));
     return true;
   }
 
   // Services Content
   async getServicesContent(): Promise<ServicesContent | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.select().from(servicesContentTable).limit(1);
-    return result[0] as ServicesContent | undefined;
+    if (!result[0]) return undefined;
+    return {
+      ...result[0],
+      updatedAt: result[0].updatedAt ? (typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()) : undefined
+    } as ServicesContent;
   }
 
   async updateServicesContent(data: Partial<InsertServicesContent>): Promise<ServicesContent> {
+    if (!db) throw new Error("Database not initialized");
     const existing = await this.getServicesContent();
     if (existing) {
       const result = await db.update(servicesContentTable).set({ ...data, updatedAt: new Date() }).where(eq(servicesContentTable.id, existing.id)).returning();
-      return result[0] as ServicesContent;
+      return {
+        ...result[0],
+        updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()
+      } as ServicesContent;
     }
     const id = randomUUID();
     const result = await db.insert(servicesContentTable).values({ id, ...data, updatedAt: new Date() } as any).returning();
-    return result[0] as ServicesContent;
-  }
+    return {
+        ...result[0],
+        updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()
+      } as ServicesContent;
+    }
 
   // Service Items
   async getServiceItems(): Promise<ServiceItem[]> {
-    return db.select().from(serviceItemsTable) as Promise<ServiceItem[]>;
+    if (!db) throw new Error("Database not initialized");
+    const items = await db.select().from(serviceItemsTable);
+    return items.map(item => ({
+      ...item,
+      order: typeof item.order === 'string' ? parseInt(item.order) : item.order,
+      createdAt: typeof item.createdAt === 'string' ? item.createdAt : (item.createdAt as Date).toISOString()
+    })) as ServiceItem[];
   }
 
   async createServiceItem(item: InsertServiceItem): Promise<ServiceItem> {
+    if (!db) throw new Error("Database not initialized");
     const id = randomUUID();
-    const result = await db.insert(serviceItemsTable).values({ id, ...item, createdAt: new Date() } as any).returning();
-    return result[0] as ServiceItem;
+    const result = await db.insert(serviceItemsTable).values({ 
+      id, 
+      ...item, 
+      order: String(item.order),
+      createdAt: new Date() 
+    } as any).returning();
+    return {
+      ...result[0],
+      order: typeof result[0].order === 'string' ? parseInt(result[0].order) : result[0].order,
+      createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
+    } as ServiceItem;
   }
 
   async updateServiceItem(id: string, item: Partial<InsertServiceItem>): Promise<ServiceItem | undefined> {
-    const result = await db.update(serviceItemsTable).set(item).where(eq(serviceItemsTable.id, id)).returning();
-    return result[0] as ServiceItem | undefined;
+    if (!db) throw new Error("Database not initialized");
+    const updateData: any = { ...item };
+    if (item.order !== undefined) {
+      updateData.order = String(item.order);
+    }
+    const result = await db.update(serviceItemsTable).set(updateData).where(eq(serviceItemsTable.id, id)).returning();
+    if (!result[0]) return undefined;
+    return {
+      ...result[0],
+      order: typeof result[0].order === 'string' ? parseInt(result[0].order) : result[0].order,
+      createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
+    } as ServiceItem;
   }
 
   async deleteServiceItem(id: string): Promise<boolean> {
+    if (!db) throw new Error("Database not initialized");
     await db.delete(serviceItemsTable).where(eq(serviceItemsTable.id, id));
     return true;
   }
 
   // Solutions Content
   async getSolutionsContent(): Promise<SolutionsContent | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const result = await db.select().from(solutionsContentTable).limit(1);
-    return result[0] as SolutionsContent | undefined;
+    if (!result[0]) return undefined;
+    return {
+      ...result[0],
+      updatedAt: result[0].updatedAt ? (typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()) : undefined
+    } as SolutionsContent;
   }
 
   async updateSolutionsContent(data: Partial<InsertSolutionsContent>): Promise<SolutionsContent> {
+    if (!db) throw new Error("Database not initialized");
     const existing = await this.getSolutionsContent();
     if (existing) {
       const result = await db.update(solutionsContentTable).set({ ...data, updatedAt: new Date() }).where(eq(solutionsContentTable.id, existing.id)).returning();
-      return result[0] as SolutionsContent;
+      return {
+        ...result[0],
+        updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()
+      } as SolutionsContent;
     }
     const id = randomUUID();
     const result = await db.insert(solutionsContentTable).values({ id, ...data, updatedAt: new Date() } as any).returning();
-    return result[0] as SolutionsContent;
-  }
+    return {
+        ...result[0],
+        updatedAt: typeof result[0].updatedAt === 'string' ? result[0].updatedAt : (result[0].updatedAt as Date).toISOString()
+      } as SolutionsContent;
+    }
 
   // Solution Items
   async getSolutionItems(): Promise<SolutionItem[]> {
+    if (!db) throw new Error("Database not initialized");
     const items = await db.select().from(solutionItemsTable);
     return items.map(item => ({
       ...item,
-      features: typeof item.features === 'string' ? JSON.parse(item.features) : item.features
+      features: typeof item.features === 'string' ? JSON.parse(item.features) : item.features,
+      order: typeof item.order === 'string' ? parseInt(item.order) : item.order,
+      createdAt: typeof item.createdAt === 'string' ? item.createdAt : (item.createdAt as Date).toISOString()
     })) as SolutionItem[];
   }
 
   async createSolutionItem(item: InsertSolutionItem): Promise<SolutionItem> {
+    if (!db) throw new Error("Database not initialized");
     const id = randomUUID();
     const values = {
       id,
       ...item,
       features: JSON.stringify(item.features),
+      order: String(item.order),
       createdAt: new Date()
     };
     const result = await db.insert(solutionItemsTable).values(values as any).returning();
@@ -982,14 +1258,20 @@ export class DatabaseStorage implements IStorage {
     const created = result[0];
     return {
       ...created,
-      features: typeof created.features === 'string' ? JSON.parse(created.features) : created.features
+      features: typeof created.features === 'string' ? JSON.parse(created.features) : created.features,
+      order: typeof created.order === 'string' ? parseInt(created.order) : created.order,
+      createdAt: typeof created.createdAt === 'string' ? created.createdAt : (created.createdAt as Date).toISOString()
     } as SolutionItem;
   }
 
   async updateSolutionItem(id: string, item: Partial<InsertSolutionItem>): Promise<SolutionItem | undefined> {
+    if (!db) throw new Error("Database not initialized");
     const updateData: any = { ...item };
     if (item.features) {
       updateData.features = JSON.stringify(item.features);
+    }
+    if (item.order !== undefined) {
+      updateData.order = String(item.order);
     }
 
     const result = await db.update(solutionItemsTable).set(updateData).where(eq(solutionItemsTable.id, id)).returning();
@@ -997,11 +1279,14 @@ export class DatabaseStorage implements IStorage {
 
     return {
       ...result[0],
-      features: typeof result[0].features === 'string' ? JSON.parse(result[0].features) : result[0].features
+      features: typeof result[0].features === 'string' ? JSON.parse(result[0].features) : result[0].features,
+      order: typeof result[0].order === 'string' ? parseInt(result[0].order) : result[0].order,
+      createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
     } as SolutionItem;
   }
 
   async deleteSolutionItem(id: string): Promise<boolean> {
+    if (!db) throw new Error("Database not initialized");
     await db.delete(solutionItemsTable).where(eq(solutionItemsTable.id, id));
     return true;
   }
@@ -1045,6 +1330,7 @@ export class DatabaseStorage implements IStorage {
         syncedAt: now
       };
 
+      if (!db) throw new Error("Database not initialized");
       const result = await db.insert(socialMediaSyncLogsTable).values(insertData as any).returning();
 
       return {
@@ -1060,6 +1346,7 @@ export class DatabaseStorage implements IStorage {
 
   async getSocialMediaApiConfigs(): Promise<any[]> {
     try {
+      if (!db) throw new Error("Database not initialized");
       const configs = await db.select().from(socialMediaApiConfigTable);
       return configs.map(config => ({
         ...config,
@@ -1076,6 +1363,7 @@ export class DatabaseStorage implements IStorage {
 
   async getSocialMediaApiConfig(platform: string): Promise<any | undefined> {
     try {
+      if (!db) throw new Error("Database not initialized");
       const result = await db.select().from(socialMediaApiConfigTable)
         .where(eq(socialMediaApiConfigTable.platform, platform))
         .limit(1);
@@ -1143,6 +1431,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSocialMediaApiConfig(platform: string): Promise<boolean> {
     try {
+      if (!db) throw new Error("Database not initialized");
       await db.delete(socialMediaApiConfigTable)
         .where(eq(socialMediaApiConfigTable.platform, platform));
       return true;
@@ -1152,7 +1441,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getSocialMediaAnalytics(platform: string): Promise<SocialMediaAnalytics | undefined> {
+  async getSocialMediaAnalytics(): Promise<SocialMediaAnalytics[]> {
+    if (!db) return [];
+    const results = await db.select().from(socialMediaAnalyticsTable);
+    return results.map(r => ({
+      ...r,
+      createdAt: typeof r.createdAt === 'string' ? r.createdAt : (r.createdAt as Date).toISOString()
+    })) as unknown as SocialMediaAnalytics[];
+  }
+
+  async getSocialMediaAnalytic(platform: string): Promise<SocialMediaAnalytics | undefined> {
     try {
       if (!db) return undefined;
       const result = await db.select().from(socialMediaAnalyticsTable)
@@ -1164,7 +1462,7 @@ export class DatabaseStorage implements IStorage {
       return {
         ...result[0],
         createdAt: result[0].createdAt ? (typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()) : undefined
-      } as any;
+      } as unknown as SocialMediaAnalytics;
     } catch (error) {
       console.error("Error fetching analytics:", error);
       return undefined;
@@ -1174,7 +1472,7 @@ export class DatabaseStorage implements IStorage {
   async updateSocialMediaAnalytics(platform: string, data: any): Promise<SocialMediaAnalytics> {
     try {
       if (!db) throw new Error("Database not initialized");
-      const existing = await this.getSocialMediaAnalytics(platform);
+      const existing = await this.getSocialMediaAnalytic(platform);
       const now = new Date();
 
       const id = randomUUID();
@@ -1196,7 +1494,10 @@ export class DatabaseStorage implements IStorage {
           .set({ ...parsedData, updatedAt: now })
           .where(eq(socialMediaAnalyticsTable.platform, platform))
           .returning();
-        return result[0] as SocialMediaAnalytics;
+        return {
+          ...result[0],
+          createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
+        } as unknown as SocialMediaAnalytics;
       }
 
       const insertData = {
@@ -1208,7 +1509,10 @@ export class DatabaseStorage implements IStorage {
       };
 
       const result = await db.insert(socialMediaAnalyticsTable).values(insertData as any).returning();
-      return result[0] as SocialMediaAnalytics;
+      return {
+          ...result[0],
+          createdAt: typeof result[0].createdAt === 'string' ? result[0].createdAt : (result[0].createdAt as Date).toISOString()
+        } as unknown as SocialMediaAnalytics;
     } catch (error) {
       console.error("Error updating analytics:", error);
       throw error;

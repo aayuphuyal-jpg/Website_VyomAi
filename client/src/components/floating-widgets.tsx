@@ -86,9 +86,10 @@ export function FloatingWidgets({ onAIChatbotOpen }: FloatingWidgetsProps) {
         ...prev,
         {
           role: "assistant",
-          content: "I apologize, but I'm having trouble connecting right now. Please try again or contact us at info@vyomai.cloud.",
+          content: `I apologize, but I'm having trouble connecting right now. Details: ${error instanceof Error ? error.message : "Network error"}. Please try again or contact us at info@vyomai.cloud.`,
         },
       ]);
+      console.error("Chatbot Client Error:", error);
     } finally {
       setIsLoading(false);
     }

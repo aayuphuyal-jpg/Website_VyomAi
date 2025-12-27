@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
-import { insertArticleSchema, insertTeamMemberSchema, insertPricingPackageSchema, insertProjectDiscussionSchema, insertBookingRequestSchema, insertOneTimePricingRequestSchema, insertSocialMediaAnalyticsSchema, insertSocialMediaIntegrationSchema, resetPasswordRequestSchema, verifyResetCodeSchema, resetPasswordSchema, insertCustomerInquirySchema } from "../shared/schema.js";
+import { insertArticleSchema, insertTeamMemberSchema, insertPricingPackageSchema, insertProjectDiscussionSchema, insertBookingRequestSchema, insertOneTimePricingRequestSchema, insertSocialMediaAnalyticsSchema, insertSocialMediaIntegrationSchema, resetPasswordRequestSchema, verifyResetCodeSchema, resetPasswordSchema, insertCustomerInquirySchema, SocialMediaIntegration } from "../shared/schema.js";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
 import OpenAI from "openai";
@@ -29,6 +29,9 @@ if (process.env.OPENAI_API_KEY) {
   console.log("⚠️ OPENAI_API_KEY not set - AI chatbot features will be disabled");
 }
 
+if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
+  throw new Error("SESSION_SECRET environment variable is required in production");
+}
 const JWT_SECRET = process.env.SESSION_SECRET || "vyom-ai-secure-secret-key-change-in-production";
 
 // Exchange rate caching (24 hours)
@@ -383,9 +386,10 @@ Always maintain a balance between being professional and approachable. Reference
       const response = completion.choices[0].message.content || "I apologize, but I couldn't generate a response. Please try again.";
       res.json({ response });
     } catch (error) {
-      console.error("Chat error:", error);
-      res.json({
-        response: "I'm experiencing some technical difficulties. Please try again later or contact us at info@vyomai.cloud."
+      console.error("Chat API Error:", error);
+      res.status(500).json({ 
+        response: "I apologize, I'm having trouble connecting to the AI service. Please try again later.",
+        details: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
@@ -1894,7 +1898,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
 
-      const filtered = inquiries.filter(i => {
+      const filtered = inquiries.filter((i: any) => {
         const date = new Date(i.createdAt);
         const typeMatch = inquiryType === "all" || i.inquiryType === inquiryType;
         return date >= start && date <= end && typeMatch;
@@ -1922,10 +1926,10 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
 
       const summary = {
         total: filtered.length,
-        contact: filtered.filter(i => i.inquiryType === "contact").length,
-        booking: filtered.filter(i => i.inquiryType === "booking").length,
-        project: filtered.filter(i => i.inquiryType === "project_discussion").length,
-        custom: filtered.filter(i => i.inquiryType === "custom_solution").length,
+        contact: filtered.filter((i: any) => i.inquiryType === "contact").length,
+        booking: filtered.filter((i: any) => i.inquiryType === "booking").length,
+        project: filtered.filter((i: any) => i.inquiryType === "project_discussion").length,
+        custom: filtered.filter((i: any) => i.inquiryType === "custom_solution").length,
       };
 
       doc.text(`• Total Inquiries: ${summary.total}`);
@@ -1941,7 +1945,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         doc.moveDown(0.3);
         doc.fontSize(10);
 
-        filtered.slice(0, 50).forEach((inquiry, idx) => {
+        filtered.slice(0, 50).forEach((inquiry: any, idx: any) => {
           const typeLabel = inquiry.inquiryType?.replace("_", " ").toUpperCase() || "UNKNOWN";
           doc.font("Helvetica-Bold").text(`${idx + 1}. ${inquiry.name} (${typeLabel})`, { underline: true });
           doc.font("Helvetica");
@@ -1953,7 +1957,8 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         });
 
         if (filtered.length > 50) {
-          doc.moveDown(0.5).text(`... and ${filtered.length - 50} more records`, { italic: true });
+          doc.moveDown(0.5).font("Helvetica-Oblique").text(`... and ${filtered.length - 50} more records`);
+          doc.font("Helvetica");
         }
       } else {
         doc.text("No records found for the selected criteria.");
@@ -1980,7 +1985,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
 
-      const filtered = inquiries.filter(i => {
+      const filtered = inquiries.filter((i: any) => {
         const date = new Date(i.createdAt);
         const typeMatch = inquiryType === "all" || i.inquiryType === inquiryType;
         return date >= start && date <= end && typeMatch;
@@ -1998,12 +2003,14 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         doc.text(`Page ${++pageNum}`, 500, 20, { width: 50, align: "right" });
         doc.moveTo(40, 50).lineTo(555, 50).stroke("#CCCCCC");
         doc.moveTo(40, doc.page.height - 50).lineTo(555, doc.page.height - 50).stroke("#CCCCCC");
-        doc.text(`Generated: ${new Date().toLocaleDateString()} | Period: ${startDate} to ${endDate}`, 40, doc.page.height - 35, { width: 515, size: 8 });
+        doc.fontSize(8);
+        doc.text(`Generated: ${new Date().toLocaleDateString()} | Period: ${startDate} to ${endDate}`, 40, doc.page.height - 35, { width: 515 });
       };
 
       // ===== COVER PAGE =====
       addHeaderFooter();
-      doc.fontSize(32).font("Helvetica-Bold").text("VyomAi", { align: "center", y: 100 });
+      doc.y = 100;
+      doc.fontSize(32).font("Helvetica-Bold").text("VyomAi", { align: "center" });
       doc.fontSize(24).text("Comprehensive Analytics Report", { align: "center" });
       doc.moveDown(2);
       doc.fontSize(12).font("Helvetica").text(`Report Period: ${startDate} to ${endDate}`, { align: "center" });
@@ -2031,10 +2038,10 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
 
       const summary = {
         total: filtered.length,
-        contact: filtered.filter(i => i.inquiryType === "contact").length,
-        booking: filtered.filter(i => i.inquiryType === "booking").length,
-        project: filtered.filter(i => i.inquiryType === "project_discussion").length,
-        custom: filtered.filter(i => i.inquiryType === "custom_solution").length,
+        contact: filtered.filter((i: any) => i.inquiryType === "contact").length,
+        booking: filtered.filter((i: any) => i.inquiryType === "booking").length,
+        project: filtered.filter((i: any) => i.inquiryType === "project_discussion").length,
+        custom: filtered.filter((i: any) => i.inquiryType === "custom_solution").length,
       };
 
       // Summary table
@@ -2067,7 +2074,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       doc.fontSize(7).font("Helvetica");
 
       if (filtered.length > 0) {
-        filtered.slice(0, 150).forEach((inquiry, idx) => {
+        filtered.slice(0, 150).forEach((inquiry: any, idx: any) => {
           const typeLabel = inquiry.inquiryType?.replace("_", " ").substring(0, 4).toUpperCase() || "N/A";
           const nameShort = inquiry.name.substring(0, 15);
           const emailShort = inquiry.email.substring(0, 20);
@@ -2100,10 +2107,12 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         });
 
         if (filtered.length > 150) {
-          doc.moveDown(0.3).fontSize(8).text(`... and ${filtered.length - 150} more inquiry records (see admin dashboard for complete list)`, { italic: true });
+          doc.moveDown(0.3).fontSize(8).font("Helvetica-Oblique").text(`... and ${filtered.length - 150} more inquiry records (see admin dashboard for complete list)`);
+          doc.font("Helvetica");
         }
       } else {
-        doc.fontSize(9).text("No inquiry records found for this period.", { italic: true });
+        doc.fontSize(9).font("Helvetica-Oblique").text("No inquiry records found for this period.");
+        doc.font("Helvetica");
       }
 
       // ===== SOCIAL MEDIA ANALYTICS PAGE =====
@@ -2117,13 +2126,13 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
 
         // Calculate total engagement metrics
         // @ts-ignore
-        const totalFollowers = socialAnalytics.reduce((sum, p) => sum + (p.followers || 0), 0);
+        const totalFollowers = socialAnalytics.reduce((sum: any, p: any) => sum + (p.followers || 0), 0);
         // @ts-ignore
-        const avgEngagement = (socialAnalytics.reduce((sum, p) => sum + (p.engagementRate || 0), 0) / socialAnalytics.length).toFixed(2);
+        const avgEngagement = (socialAnalytics.reduce((sum: any, p: any) => sum + (p.engagementRate || 0), 0) / socialAnalytics.length).toFixed(2);
         // @ts-ignore
-        const totalImpressions = socialAnalytics.reduce((sum, p) => sum + (p.impressions || 0), 0);
+        const totalImpressions = socialAnalytics.reduce((sum: any, p: any) => sum + (p.impressions || 0), 0);
         // @ts-ignore
-        const topPlatform = socialAnalytics.sort((a, b) => (b.followers || 0) - (a.followers || 0))[0];
+        const topPlatform = socialAnalytics.sort((a: any, b: any) => (b.followers || 0) - (a.followers || 0))[0];
 
         doc.fontSize(10).font("Helvetica-Bold").text("Summary Metrics:", { underline: true });
         doc.fontSize(9).font("Helvetica");
@@ -2152,7 +2161,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
         let sRowY = tableTopSocial + 18;
         doc.fontSize(8).font("Helvetica");
 
-        socialAnalytics.forEach(platform => {
+        socialAnalytics.forEach((platform: any) => {
           doc.text(platform.platform?.substring(0, 10) || "Platform", sCol1, sRowY);
           doc.text((platform.followers || 0).toString(), sCol2, sRowY);
           doc.text((platform.engagementRate || 0).toString(), sCol3, sRowY);
@@ -2195,10 +2204,10 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       doc.moveDown(0.5);
 
       // Generate sophisticated AI insights
-      const peakCategory = summary.total > 0 ? Object.entries(summary).filter(([k]) => k !== 'total').sort(([, a], [, b]) => b - a)[0] : null;
+      const peakCategory = summary.total > 0 ? Object.entries(summary).filter(([k]: [string, any]) => k !== 'total').sort(([, a]: [string, any], [, b]: [string, any]) => b - a)[0] : null;
       const conversionRate = summary.total > 0 ? Math.round((summary.booking / summary.total) * 100) : 0;
-      const avgEngagementSocial = socialAnalytics?.length > 0 ? (socialAnalytics.reduce((sum, p) => sum + (p.engagementRate || 0), 0) / socialAnalytics.length).toFixed(1) : "0";
-      const topPerformer = socialAnalytics?.length > 0 ? socialAnalytics.sort((a, b) => (b.engagementRate || 0) - (a.engagementRate || 0))[0] : null;
+        const avgEngagementSocial = socialAnalytics?.length > 0 ? (socialAnalytics.reduce((sum: any, p: any) => sum + (p.engagementRate || 0), 0) / socialAnalytics.length).toFixed(1) : "0";
+        const topPerformer = socialAnalytics?.length > 0 ? socialAnalytics.sort((a: any, b: any) => (b.engagementRate || 0) - (a.engagementRate || 0))[0] : null;
 
       const aiInsights = [
         {
@@ -2237,8 +2246,10 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       });
 
       doc.moveDown(1);
-      doc.fontSize(8).font("Helvetica").text("This report was generated using advanced analytics and AI-powered business intelligence. All recommendations are based on your actual business metrics.", { align: "center", italic: true, width: 475 });
-      doc.text("For strategic consultation, contact the VyomAi team.", { align: "center", italic: true, width: 475 });
+      doc.fontSize(8).font("Helvetica-Oblique");
+      doc.text("This report was generated using advanced analytics and AI-powered business intelligence. All recommendations are based on your actual business metrics.", { align: "center", width: 475 });
+      doc.text("For strategic consultation, contact the VyomAi team.", { align: "center", width: 475 });
+      doc.font("Helvetica");
 
       doc.end();
 
@@ -2674,7 +2685,7 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
       // Combine configs and integrations
       // @ts-ignore
       const combined = configs.map(config => {
-        const integration = integrations.find(i => i.platform === config.platform);
+        const integration = integrations.find((i: SocialMediaIntegration) => i.platform === config.platform);
         return {
           ...config,
           isConnected: integration?.isConnected || false,

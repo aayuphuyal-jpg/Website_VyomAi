@@ -75,7 +75,7 @@ app.use(
       tableName: "session",
       createTableIfMissing: true,
     }) : undefined,
-    secret: process.env.SESSION_SECRET || "dev_secret_key_123",
+    secret: process.env.SESSION_SECRET || (process.env.NODE_ENV === "production" ? (() => { throw new Error("SESSION_SECRET required in production"); })() : "dev_secret_key_123"),
     resave: false,
     saveUninitialized: false,
     cookie: {

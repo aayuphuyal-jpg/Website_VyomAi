@@ -303,9 +303,22 @@ export function MediaSection() {
               {selectedArticle.type === "video" && selectedArticle.mediaUrl && (
                 <div className="aspect-video mb-6 rounded-lg overflow-hidden">
                   <iframe
-                    src={selectedArticle.mediaUrl}
+                    src={(() => {
+                      try {
+                        const url = new URL(selectedArticle.mediaUrl);
+                        if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
+                          const videoId = url.searchParams.get("v") || url.pathname.split("/").pop();
+                          return `https://www.youtube.com/embed/${videoId}`;
+                        }
+                        return selectedArticle.mediaUrl;
+                      } catch (e) {
+                        return selectedArticle.mediaUrl;
+                      }
+                    })()}
                     className="w-full h-full"
                     allowFullScreen
+                    title={selectedArticle.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   />
                 </div>
               )}
