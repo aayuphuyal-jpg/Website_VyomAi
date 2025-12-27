@@ -49,7 +49,7 @@ export function AIChatbot() {
         ...prev,
         {
           role: "assistant",
-          content: "I apologize, but I'm having trouble connecting right now. Please try again or contact us at info@vyomai.cloud.",
+          content: `I apologize, but I'm having trouble connecting right now. Error Details: ${error instanceof Error ? error.message : "Unknown error"}`,
         },
       ]);
     } finally {
