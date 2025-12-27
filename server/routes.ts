@@ -375,9 +375,9 @@ Always maintain a balance between being professional and approachable. Reference
       }
 
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: "gpt-3.5-turbo",
         messages: chatMessages,
-        max_completion_tokens: 500,
+        max_tokens: 500,
       });
 
       const response = completion.choices[0].message.content || "I apologize, but I couldn't generate a response. Please try again.";
