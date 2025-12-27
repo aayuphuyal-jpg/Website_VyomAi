@@ -3,9 +3,9 @@
  * Supports OAuth 2.0 authentication
  */
 
-import { BaseSocialMediaClient } from './base-client';
-import { encrypt } from '../crypto-utils';
-import { storage } from '../storage';
+import { BaseSocialMediaClient } from './base-client.js';
+import { encrypt } from '../crypto-utils.js';
+import { storage } from '../storage.js';
 
 export class LinkedInClient extends BaseSocialMediaClient {
     private readonly apiUrl = 'https://api.linkedin.com/v2';
@@ -160,7 +160,7 @@ export class LinkedInClient extends BaseSocialMediaClient {
         clientSecret: string,
         redirectUri: string
     ): Promise<{ accessToken: string; refreshToken: string }> {
-        const axios = require('axios');
+        const { default: axios } = await import('axios');
 
         const response = await axios.post(
             'https://www.linkedin.com/oauth/v2/accessToken',

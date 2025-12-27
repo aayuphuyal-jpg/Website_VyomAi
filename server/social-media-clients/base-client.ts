@@ -4,8 +4,8 @@
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import { encrypt, decrypt } from '../crypto-utils';
-import { storage } from '../storage';
+import { encrypt, decrypt } from '../crypto-utils.js';
+import { storage } from '../storage.js';
 
 export type AuthMethod = 'oauth' | 'api_key';
 

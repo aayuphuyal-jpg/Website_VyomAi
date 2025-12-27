@@ -4,9 +4,9 @@
  * Supports OAuth 2.0 authentication
  */
 
-import { BaseSocialMediaClient } from './base-client';
-import { encrypt } from '../crypto-utils';
-import { storage } from '../storage';
+import { BaseSocialMediaClient } from './base-client.js';
+import { encrypt } from '../crypto-utils.js';
+import { storage } from '../storage.js';
 
 export class FacebookClient extends BaseSocialMediaClient {
     private readonly graphApiUrl = 'https://graph.facebook.com/v18.0';
@@ -224,7 +224,7 @@ export class FacebookClient extends BaseSocialMediaClient {
         clientSecret: string,
         redirectUri: string
     ): Promise<{ accessToken: string; refreshToken: string }> {
-        const axios = require('axios');
+        const { default: axios } = await import('axios');
 
         const response = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
             params: {

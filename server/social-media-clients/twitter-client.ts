@@ -3,9 +3,9 @@
  * Supports OAuth 2.0 authentication
  */
 
-import { BaseSocialMediaClient } from './base-client';
-import { encrypt } from '../crypto-utils';
-import { storage } from '../storage';
+import { BaseSocialMediaClient } from './base-client.js';
+import { encrypt } from '../crypto-utils.js';
+import { storage } from '../storage.js';
 
 export class TwitterClient extends BaseSocialMediaClient {
     private readonly apiUrl = 'https://api.twitter.com/2';
@@ -164,7 +164,7 @@ export class TwitterClient extends BaseSocialMediaClient {
         clientSecret: string,
         redirectUri: string
     ): Promise<{ accessToken: string; refreshToken: string }> {
-        const axios = require('axios');
+        const { default: axios } = await import('axios');
         const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
         const response = await axios.post(

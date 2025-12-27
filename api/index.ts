@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { app } from "../server/index";
+import { app } from "../server/index.js";
 
 console.log("Vercel Serverless Function initialized");
 

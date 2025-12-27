@@ -1,24 +1,24 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage } from "./storage.js";
 import { insertArticleSchema, insertTeamMemberSchema, insertPricingPackageSchema, insertProjectDiscussionSchema, insertBookingRequestSchema, insertOneTimePricingRequestSchema, insertSocialMediaAnalyticsSchema, insertSocialMediaIntegrationSchema, resetPasswordRequestSchema, verifyResetCodeSchema, resetPasswordSchema, insertCustomerInquirySchema } from "@shared/schema";
 import { z } from "zod";
 import OpenAI from "openai";
 import bcryptjs from "bcryptjs";
 import { randomBytes } from "crypto";
-import { sendContactFormEmail, sendPasswordResetEmail, sendBookingConfirmationEmail, sendOneTimePricingRequestEmail, sendEmail, sendEmailWithAttachment } from "./email-service";
-import { generateTwoFactorSecret, verifyTwoFactorToken } from "./two-factor-auth";
-import { initiatePayment } from "./payment-service";
-import { validateEmailCredentials, fetchEmails, createEmailSession, validateEmailSession, endEmailSession } from "./email-client";
+import { sendContactFormEmail, sendPasswordResetEmail, sendBookingConfirmationEmail, sendOneTimePricingRequestEmail, sendEmail, sendEmailWithAttachment } from "./email-service.js";
+import { generateTwoFactorSecret, verifyTwoFactorToken } from "./two-factor-auth.js";
+import { initiatePayment } from "./payment-service.js";
+import { validateEmailCredentials, fetchEmails, createEmailSession, validateEmailSession, endEmailSession } from "./email-client.js";
 import PDFDocument from "pdfkit";
 import nodemailer from "nodemailer";
-import { YouTubeClient } from './social-media-clients/youtube-client';
-import { FacebookClient, InstagramClient } from './social-media-clients/facebook-client';
-import { LinkedInClient } from './social-media-clients/linkedin-client';
-import { TwitterClient } from './social-media-clients/twitter-client';
-import { syncPlatform, syncAllPlatforms } from './social-media-clients';
-import { initializeAutoSync, schedulePlatformSync, stopPlatformSync } from './social-media-sync-scheduler';
-import { encrypt, decrypt } from './crypto-utils';
+import { YouTubeClient } from './social-media-clients/youtube-client.js';
+import { FacebookClient, InstagramClient } from './social-media-clients/facebook-client.js';
+import { LinkedInClient } from './social-media-clients/linkedin-client.js';
+import { TwitterClient } from './social-media-clients/twitter-client.js';
+import { syncPlatform, syncAllPlatforms } from './social-media-clients/index.js';
+import { initializeAutoSync, schedulePlatformSync, stopPlatformSync } from './social-media-sync-scheduler.js';
+import { encrypt, decrypt } from './crypto-utils.js';
 
 // OpenAI client - initialized lazily when API key is available
 let openai: OpenAI | null = null;
@@ -590,7 +590,7 @@ Always maintain a balance between being professional and approachable. Reference
   // Email configuration endpoints - Multi-provider support
   app.get("/api/admin/email-status", authMiddleware, async (req, res) => {
     try {
-      const { testEmailProvider } = await import("./email-service");
+      const { testEmailProvider } = await import("./email-service.js");
       const settings = await storage.getSettings();
       const primaryProvider = (settings as any).emailProvider || "smtp";
 
@@ -610,7 +610,7 @@ Always maintain a balance between being professional and approachable. Reference
   // Get all provider statuses
   app.get("/api/admin/email-providers", authMiddleware, async (req, res) => {
     try {
-      const { getProviderStatuses } = await import("./email-service");
+      const { getProviderStatuses } = await import("./email-service.js");
       const settings = await storage.getSettings() as any;
       const statuses = await getProviderStatuses();
 
@@ -638,7 +638,7 @@ Always maintain a balance between being professional and approachable. Reference
   // Update email configuration
   app.put("/api/admin/email-config", authMiddleware, async (req, res) => {
     try {
-      const { clearEmailConfigCache } = await import("./email-service");
+      const { clearEmailConfigCache } = await import("./email-service.js");
       const {
         emailProvider,
         emailFromName,
@@ -679,7 +679,7 @@ Always maintain a balance between being professional and approachable. Reference
   // Test specific provider
   app.post("/api/admin/test-email-provider", authMiddleware, async (req, res) => {
     try {
-      const { testEmailProvider } = await import("./email-service");
+      const { testEmailProvider } = await import("./email-service.js");
       const { provider } = req.body;
 
       if (!provider || !["gmail", "smtp", "sendgrid"].includes(provider)) {
@@ -696,7 +696,7 @@ Always maintain a balance between being professional and approachable. Reference
   // Test email endpoint
   app.post("/api/admin/test-email", authMiddleware, async (req, res) => {
     try {
-      const { sendEmailWithResult } = await import("./email-service");
+      const { sendEmailWithResult } = await import("./email-service.js");
       const { email } = req.body;
       if (!email) {
         return res.status(400).json({ error: "Email address required" });
@@ -737,7 +737,7 @@ Always maintain a balance between being professional and approachable. Reference
 
   app.post("/api/admin/send-email", authMiddleware, async (req, res) => {
     try {
-      const { sendEmailWithResult } = await import("./email-service");
+      const { sendEmailWithResult } = await import("./email-service.js");
 
       const validation = sendEmailSchema.safeParse(req.body);
       if (!validation.success) {

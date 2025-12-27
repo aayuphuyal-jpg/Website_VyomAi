@@ -4,8 +4,8 @@
  */
 
 import cron from 'node-cron';
-import { storage } from './storage';
-import { syncPlatform, SocialMediaPlatform } from './social-media-clients';
+import { storage } from './storage.js';
+import { syncPlatform, SocialMediaPlatform } from './social-media-clients/index.js';
 
 // Store active cron jobs
 const activeCronJobs = new Map<string, cron.ScheduledTask>();

@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type Article, type InsertArticle, type SiteSettings, type VisitorStats, type TeamMember, type InsertTeamMember, type PricingPackage, type InsertPricingPackage, type ProjectDiscussion, type InsertProjectDiscussion, type BookingRequest, type InsertBookingRequest, type SocialMediaAnalytics, type InsertSocialMediaAnalytics, type SocialMediaIntegration, type InsertSocialMediaIntegration, type OneTimePricingRequest, type InsertOneTimePricingRequest, type HeroContent, type InsertHeroContent, type AboutContent, type InsertAboutContent, type AboutValue, type InsertAboutValue, type ServicesContent, type InsertServicesContent, type ServiceItem, type InsertServiceItem, type SolutionsContent, type InsertSolutionsContent, type SolutionItem, type InsertSolutionItem, type PopupForm, type InsertPopupForm } from "@shared/schema";
 import { randomUUID } from "crypto";
 import bcryptjs from "bcryptjs";
-import { DatabaseStorage } from "./db-storage";
+import { DatabaseStorage } from "./db-storage.js";
 
 // Try to use database storage, fall back to memory if DB not available
 let storage: any;

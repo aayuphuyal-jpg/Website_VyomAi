@@ -54,7 +54,7 @@ async function sendViaGmail(options: EmailOptions): Promise<EmailResult> {
       return { success: false, error: "Gmail connector not available (not running on Replit)" };
     }
 
-    const { getUncachableGmailClient } = await import("./gmail-client");
+    const { getUncachableGmailClient } = await import("./gmail-client.js");
     const gmail = await getUncachableGmailClient();
     
     const message = [
@@ -207,7 +207,7 @@ export async function testProvider(provider: EmailProvider, config: EmailConfig)
         if (!process.env.REPLIT_CONNECTORS_HOSTNAME) {
           return { success: false, error: "Not running on Replit - Gmail connector unavailable" };
         }
-        const { getUncachableGmailClient } = await import("./gmail-client");
+        const { getUncachableGmailClient } = await import("./gmail-client.js");
         const gmail = await getUncachableGmailClient();
         await gmail.users.getProfile({ userId: "me" });
         return { success: true, provider: "gmail" };

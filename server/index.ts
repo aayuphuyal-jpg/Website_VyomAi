@@ -2,8 +2,8 @@ import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import { registerRoutes } from "./routes";
-import { serveStatic } from "./static";
+import { registerRoutes } from "./routes.js";
+import { serveStatic } from "./static.js";
 import { createServer } from "http";
 import "dotenv/config";
 
@@ -63,7 +63,7 @@ app.post("/api/admin/login", loginLimiter, (req, res, next) => {
 // Session configuration for persistent auth across serverless invocations
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
-import { pool } from "./db";
+import { pool } from "./db.js";
 
 const PgSession = connectPgSimple(session);
 
@@ -129,8 +129,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const status = err.status || err.statusCode || 500;
   const message = err.message || "Internal Server Error";
 
+  console.error(`Root Error Handler: ${message}`, err);
   res.status(status).json({ message });
-  throw err;
 });
 
 // importantly only setup vite in development and after
@@ -139,7 +139,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 if (process.env.NODE_ENV === "production") {
   serveStatic(app);
 } else {
-  const { setupVite } = await import("./vite");
+  const { setupVite } = await import("./vite.js");
   await setupVite(httpServer, app);
 }
 
@@ -160,7 +160,7 @@ if (process.env.VERCEL !== "1") {
       log(`serving on port ${port}`);
 
       // Initialize social media auto-sync scheduler
-      import('./social-media-sync-scheduler').then(({ initializeAutoSync }) => {
+      import('./social-media-sync-scheduler.js').then(({ initializeAutoSync }) => {
         initializeAutoSync().catch(err => console.error('Failed to initialize auto-sync:', err));
       }).catch(err => console.error('Failed to load auto-sync scheduler:', err));
     },

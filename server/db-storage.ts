@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "./db.js";
 import {
   usersTable, articlesTable, teamMembersTable, pricingPackagesTable,
   projectDiscussionTable, bookingRequestsTable, siteSettingsTable,

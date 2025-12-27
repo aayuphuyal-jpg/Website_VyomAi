@@ -4,9 +4,9 @@
  */
 
 import { google } from 'googleapis';
-import { BaseSocialMediaClient } from './base-client';
-import { encrypt } from '../crypto-utils';
-import { storage } from '../storage';
+import { BaseSocialMediaClient } from './base-client.js';
+import { encrypt } from '../crypto-utils.js';
+import { storage } from '../storage.js';
 
 export class YouTubeClient extends BaseSocialMediaClient {
     private youtube: any;

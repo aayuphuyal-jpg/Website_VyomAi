@@ -1,5 +1,5 @@
-import { sendEmailWithProvider, testProvider, escapeHtml, type EmailOptions, type EmailConfig, type EmailResult, type EmailProvider } from "./email-providers";
-import { storage } from "./storage";
+import { sendEmailWithProvider, testProvider, escapeHtml, type EmailOptions, type EmailConfig, type EmailResult, type EmailProvider } from "./email-providers.js";
+import { storage } from "./storage.js";
 
 let cachedConfig: EmailConfig | null = null;
 let configLastFetched = 0;
@@ -236,7 +236,7 @@ export async function sendEmailWithAttachment(options: {
         return false;
       }
       
-      const { getUncachableGmailClient } = await import("./gmail-client");
+      const { getUncachableGmailClient } = await import("./gmail-client.js");
       const gmail = await getUncachableGmailClient();
       
       const boundary = `----WebKitFormBoundary${Math.random().toString(36).substr(2, 9)}`;

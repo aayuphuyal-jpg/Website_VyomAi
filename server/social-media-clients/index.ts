@@ -3,11 +3,11 @@
  * Creates appropriate client instances for each platform
  */
 
-import { YouTubeClient } from './youtube-client';
-import { FacebookClient, InstagramClient } from './facebook-client';
-import { LinkedInClient } from './linkedin-client';
-import { TwitterClient } from './twitter-client';
-import { BaseSocialMediaClient } from './base-client';
+import { YouTubeClient } from './youtube-client.js';
+import { FacebookClient, InstagramClient } from './facebook-client.js';
+import { LinkedInClient } from './linkedin-client.js';
+import { TwitterClient } from './twitter-client.js';
+import { BaseSocialMediaClient } from './base-client.js';
 
 export type SocialMediaPlatform = 'youtube' | 'facebook' | 'instagram' | 'linkedin' | 'twitter' | 'whatsapp' | 'viber';
 
