@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { storage } from "../server/storage";
 import { db } from "../server/db";
-import { visitorStatsTable } from "@shared/schema";
+import { visitorStatsTable } from "../shared/schema.js";
 import { eq } from "drizzle-orm";
 
 async function resetStats() {
