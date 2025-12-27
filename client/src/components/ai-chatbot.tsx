@@ -90,7 +90,7 @@ export function AIChatbot() {
               <Sparkles className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h3 className="font-semibold">VyomAi Assistant</h3>
+              <h3 className="font-semibold">VyomAi Assistant (v1.1 Debug)</h3>
               <p className="text-xs text-muted-foreground">AI-powered support</p>
             </div>
           </div>
