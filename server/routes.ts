@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
-import { insertArticleSchema, insertTeamMemberSchema, insertPricingPackageSchema, insertProjectDiscussionSchema, insertBookingRequestSchema, insertOneTimePricingRequestSchema, insertSocialMediaAnalyticsSchema, insertSocialMediaIntegrationSchema, resetPasswordRequestSchema, verifyResetCodeSchema, resetPasswordSchema, insertCustomerInquirySchema } from "@shared/schema";
+import { insertArticleSchema, insertTeamMemberSchema, insertPricingPackageSchema, insertProjectDiscussionSchema, insertBookingRequestSchema, insertOneTimePricingRequestSchema, insertSocialMediaAnalyticsSchema, insertSocialMediaIntegrationSchema, resetPasswordRequestSchema, verifyResetCodeSchema, resetPasswordSchema, insertCustomerInquirySchema } from "./shared/schema.js";
 import { z } from "zod";
 import OpenAI from "openai";
 import bcryptjs from "bcryptjs";

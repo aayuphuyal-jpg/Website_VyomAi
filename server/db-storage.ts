@@ -7,12 +7,12 @@ import {
   heroContentTable, aboutContentTable, aboutValuesTable, servicesContentTable,
   serviceItemsTable, solutionsContentTable, solutionItemsTable,
   socialMediaSyncLogsTable, socialMediaApiConfigTable
-} from "@shared/schema";
+} from "./shared/schema.js";
 import { eq } from "drizzle-orm";
 import {
   type User, type InsertUser, type Article, type InsertArticle, type SiteSettings, type VisitorStats, type TeamMember, type InsertTeamMember, type PricingPackage, type InsertPricingPackage, type ProjectDiscussion, type InsertProjectDiscussion, type BookingRequest, type InsertBookingRequest, type SocialMediaAnalytics, type InsertSocialMediaAnalytics, type SocialMediaIntegration, type InsertSocialMediaIntegration, type OneTimePricingRequest, type InsertOneTimePricingRequest, type CustomerInquiry, type InsertCustomerInquiry, type PopupForm, type InsertPopupForm,
   type HeroContent, type InsertHeroContent, type AboutContent, type InsertAboutContent, type AboutValue, type InsertAboutValue, type ServicesContent, type InsertServicesContent, type ServiceItem, type InsertServiceItem, type SolutionsContent, type InsertSolutionsContent, type SolutionItem, type InsertSolutionItem
-} from "@shared/schema";
+} from "./shared/schema.js";
 import { randomUUID } from "crypto";
 import bcryptjs from "bcryptjs";
 

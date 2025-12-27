@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const serverDir = "/Users/shekharphuyal/Documents/AntiGravity/VyomAiSite-11zip/shared"
+const serverDir = "/Users/shekharphuyal/Documents/AntiGravity/VyomAiSite-11zip/server"
 
 function processDirectory(dir) {
     const files = fs.readdirSync(dir);
@@ -49,6 +49,12 @@ function processDirectory(dir) {
                         return `${p1}${p2}/index.js${p3}`;
                     }
                     return `${p1}${p2}.js${p3}`;
+                }
+            ).replace(
+                /@shared\/schema/g,
+                () => {
+                    const relativePath = path.relative(dir, path.join(serverDir.replace('/shared', ''), 'shared', 'schema.js'));
+                    return relativePath.startsWith('.') ? relativePath : './' + relativePath;
                 }
             );
 
