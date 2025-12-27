@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage.js";
 import { insertArticleSchema, insertTeamMemberSchema, insertPricingPackageSchema, insertProjectDiscussionSchema, insertBookingRequestSchema, insertOneTimePricingRequestSchema, insertSocialMediaAnalyticsSchema, insertSocialMediaIntegrationSchema, resetPasswordRequestSchema, verifyResetCodeSchema, resetPasswordSchema, insertCustomerInquirySchema } from "../shared/schema.js";
 import { z } from "zod";
+import jwt from "jsonwebtoken";
 import OpenAI from "openai";
 import bcryptjs from "bcryptjs";
 import { randomBytes } from "crypto";
@@ -28,7 +29,7 @@ if (process.env.OPENAI_API_KEY) {
   console.log("⚠️ OPENAI_API_KEY not set - AI chatbot features will be disabled");
 }
 
-const tokens: Map<string, string> = new Map();
+const JWT_SECRET = process.env.SESSION_SECRET || "vyom-ai-secure-secret-key-change-in-production";
 
 // Exchange rate caching (24 hours)
 interface ExchangeRateCache {
@@ -89,10 +90,7 @@ async function getExchangeRates(forceRefresh = false) {
   return rates;
 }
 
-// Secure token generation using crypto.randomBytes
-function generateToken(): string {
-  return randomBytes(32).toString("hex");
-}
+
 
 function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
@@ -102,14 +100,14 @@ function authMiddleware(req: Request, res: Response, next: NextFunction) {
   }
 
   const token = authHeader.substring(7);
-  const username = tokens.get(token);
 
-  if (!username) {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { username: string };
+    (req as any).user = { username: decoded.username };
+    next();
+  } catch (error) {
     return res.status(401).json({ error: "Invalid token" });
   }
-
-  (req as any).user = { username };
-  next();
 }
 
 export async function registerRoutes(
@@ -421,14 +419,7 @@ Always maintain a balance between being professional and approachable. Reference
         }
       }
 
-      const token = generateToken();
-      tokens.set(token, username);
-
-
-      // Auto-expire token after 24 hours
-      setTimeout(() => {
-        tokens.delete(token);
-      }, 24 * 60 * 60 * 1000);
+      const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '24h' });
 
       res.json({ success: true, token });
     } catch (error) {
