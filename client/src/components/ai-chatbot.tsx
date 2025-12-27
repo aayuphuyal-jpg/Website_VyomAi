@@ -40,10 +40,9 @@ export function AIChatbot() {
     setIsLoading(true);
 
     try {
-      const response = await apiRequest("POST", "/api/chat", {
+      const data = await apiRequest("POST", "/api/chat", {
         messages: [...messages, userMessage],
       });
-      const data = await response.json();
       setMessages((prev) => [...prev, { role: "assistant", content: data.response }]);
     } catch (error) {
       setMessages((prev) => [
