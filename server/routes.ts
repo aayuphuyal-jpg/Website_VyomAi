@@ -24,7 +24,9 @@ import { encrypt, decrypt } from './crypto-utils.js';
 // OpenAI client - initialized lazily when API key is available
 let openai: OpenAI | null = null;
 if (process.env.OPENAI_API_KEY) {
-  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  // Sanitize key to remove any accidental newlines, whitespace, or the sticky 'y' character from deployment scripts
+  const sanitizedKey = process.env.OPENAI_API_KEY.trim().replace(/[\n\r]/g, '').replace(/y$/, '');
+  openai = new OpenAI({ apiKey: sanitizedKey });
 } else {
   console.log("⚠️ OPENAI_API_KEY not set - AI chatbot features will be disabled");
 }
@@ -32,7 +34,7 @@ if (process.env.OPENAI_API_KEY) {
 if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
   throw new Error("SESSION_SECRET environment variable is required in production");
 }
-const JWT_SECRET = process.env.SESSION_SECRET || "vyom-ai-secure-secret-key-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET || process.env.SESSION_SECRET || (() => { throw new Error("JWT_SECRET or SESSION_SECRET environment variable is required"); })();
 
 // Exchange rate caching (24 hours)
 interface ExchangeRateCache {
@@ -327,15 +329,19 @@ export async function registerRoutes(
         return res.status(400).json({ error: "All fields are required" });
       }
 
-      // Send emails (fire and forget with error logging)
-      sendContactFormEmail({ name, email, subject, message }).catch((emailError) => {
-        console.error("📧 Failed to send contact form email:", emailError);
-      });
+      // Send emails (await to handle errors)
+      await sendContactFormEmail({ name, email, subject, message });
 
       res.json({ success: true, message: "Message received and confirmation sent" });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Contact form error:", error);
-      res.status(500).json({ error: "Failed to process contact form" });
+      
+      // Check for specific email errors
+      if (error.message?.includes("User does not exist") || error.message?.includes("email is invalid")) {
+        return res.status(400).json({ error: "The provided email address does not exist or cannot be reached." });
+      }
+
+      res.status(500).json({ error: "Failed to process contact form: " + (error.message || "Unknown error") });
     }
   });
 
@@ -343,9 +349,11 @@ export async function registerRoutes(
     try {
       const { messages } = req.body;
 
+      // Explicit runtime check for debugging Vercel deployment
       if (!process.env.OPENAI_API_KEY) {
-        return res.json({
-          response: "I'm sorry, but the AI service is not configured yet. Please contact us at info@vyomai.cloud for assistance."
+        console.error("❌ Chatbot Error: OPENAI_API_KEY is missing in environment variables!");
+        return res.status(503).json({
+          response: "I'm sorry, but the AI service is not configured correctly. Please contact the administrator."
         });
       }
 
@@ -642,6 +650,7 @@ Always maintain a balance between being professional and approachable. Reference
         smtpHost,
         smtpPort,
         smtpUser,
+        smtpPassword,
         smtpSecure,
         sendgridFromEmail,
         emailProviderPriority,
@@ -656,6 +665,7 @@ Always maintain a balance between being professional and approachable. Reference
         smtpHost,
         smtpPort,
         smtpUser,
+        smtpPassword,
         smtpSecure,
         sendgridFromEmail,
         emailProviderPriority,
@@ -1252,12 +1262,29 @@ Is this conversion accurate (within 1% tolerance)? Reply with JSON: {"accurate":
     try {
       const validated = insertCustomerInquirySchema.parse(req.body);
       const inquiry = await storage.createCustomerInquiry(validated);
+
+      // Send email notification (await to verify delivery)
+      // This handles 'contact', 'custom_solution', 'booking', and 'project_discussion'
+      await sendContactFormEmail({
+        name: validated.name,
+        email: validated.email,
+        subject: validated.subject || `New ${validated.inquiryType.replace('_', ' ')} Inquiry`,
+        message: validated.message,
+      });
+
       res.json(inquiry);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Customer inquiry error:", error);
+      
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
       }
-      console.error("Customer inquiry error:", error);
+
+      // Check for specific email errors from sendContactFormEmail
+      if (error.message?.includes("User does not exist") || error.message?.includes("email is invalid")) {
+        return res.status(400).json({ error: "The provided email address does not exist or cannot be reached. Please providing a valid email address." });
+      }
+
       res.status(500).json({ error: "Failed to save inquiry" });
     }
   });

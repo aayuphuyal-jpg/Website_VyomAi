@@ -147,6 +147,7 @@ export const siteSettingsSchema = z.object({
   smtpHost: z.string().optional(),
   smtpPort: z.string().optional().default("587"),
   smtpUser: z.string().optional(),
+  smtpPassword: z.string().optional(),
   smtpSecure: z.boolean().optional().default(false),
   // SendGrid Settings
   sendgridFromEmail: z.string().email().optional(),
@@ -519,6 +520,7 @@ export const siteSettingsTable = pgTable("site_settings", {
   smtpHost: varchar("smtp_host"),
   smtpPort: varchar("smtp_port").default("587"),
   smtpUser: varchar("smtp_user"),
+  smtpPassword: varchar("smtp_password"), // Added for UI configuration
   smtpSecure: boolean("smtp_secure").default(false),
   // SendGrid Settings (non-secret fields only)
   sendgridFromEmail: varchar("sendgrid_from_email"),

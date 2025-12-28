@@ -13,7 +13,7 @@ import { PopupFormsPage } from "@/pages/admin/popup-forms";
 import { HomepageContentPage } from "@/pages/admin/homepage-content";
 import { UsersPage } from "@/pages/admin/users";
 import SocialMediaAdmin from "@/pages/admin/social-media";
-import EmailSettingsAdmin from "@/pages/admin/email-settings";
+
 import { SocialMediaIntegrationPage } from "@/pages/admin/social-media-integration";
 
 function LoadingSpinner() {
@@ -36,9 +36,7 @@ export default function AdminDashboardRouter() {
 
   return (
     <Switch>
-      <Route path="/admin/email-settings">
-        <EmailSettingsAdmin />
-      </Route>
+
       <Route>
         <AdminLayout>
           <Switch>

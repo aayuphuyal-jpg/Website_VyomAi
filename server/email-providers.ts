@@ -32,6 +32,7 @@ export interface EmailConfig {
   smtpHost?: string;
   smtpPort?: string;
   smtpUser?: string;
+  smtpPassword?: string; // Added to interface
   smtpSecure?: boolean;
   sendgridFromEmail?: string;
   providerPriority: EmailProvider[];
@@ -85,7 +86,7 @@ async function sendViaGmail(options: EmailOptions): Promise<EmailResult> {
 
 async function sendViaSMTP(options: EmailOptions, config: EmailConfig): Promise<EmailResult> {
   try {
-    const smtpPassword = process.env.EMAIL_SMTP_PASSWORD;
+    const smtpPassword = process.env.EMAIL_SMTP_PASSWORD || config.smtpPassword;
     
     if (!config.smtpHost || !config.smtpUser || !smtpPassword) {
       return { success: false, error: "SMTP configuration incomplete" };
@@ -217,7 +218,7 @@ export async function testProvider(provider: EmailProvider, config: EmailConfig)
 
     case "smtp":
       try {
-        const smtpPassword = process.env.EMAIL_SMTP_PASSWORD;
+        const smtpPassword = process.env.EMAIL_SMTP_PASSWORD || config.smtpPassword;
         if (!config.smtpHost || !config.smtpUser || !smtpPassword) {
           return { success: false, error: "SMTP configuration incomplete" };
         }

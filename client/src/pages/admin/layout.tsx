@@ -1,11 +1,12 @@
 import { useLocation, Link } from "wouter";
 import {
   LogOut, BarChart3, FileText, Users, DollarSign, BookOpen, MessageSquare, Settings,
-  Home, Share2, Mail, Menu, X, ChevronRight, Sparkles, UserCog
+  Home, Share2, Mail, Menu, X, ChevronRight, Sparkles, UserCog, ExternalLink
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { LaunchTimer } from "@/components/launch-timer";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -59,7 +60,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       title: "Integrations",
       items: [
         { label: "Social Media", href: "/admin/social-media-integration", icon: Share2 },
-        { label: "Email Settings", href: "/admin/email-settings", icon: Mail },
       ],
     },
     {
@@ -182,15 +182,42 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-green-700">System Online</span>
+            {/* Header Actions */}
+            <div className="flex items-center gap-4">
+              {/* Permanent Animated Date Display */}
+              {/* Permanent Animated Date Display */}
+              <LaunchTimer />
+
+              <a href="/" target="_blank" rel="noopener noreferrer">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2 hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-all duration-300 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md group"
+                >
+                  <ExternalLink className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
+                  View Site
+                </Button>
+              </a>
+              
+              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-full border border-border/50">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span>Admin</span>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleLogout}
+                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+              </Button>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto bg-gray-50 p-6">
-          <div className="max-w-7xl mx-auto">
+        {/* Content */}
+        <main className="flex-1 overflow-auto bg-muted/20">
+          <div className="container max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-500">
             {children}
           </div>
         </main>

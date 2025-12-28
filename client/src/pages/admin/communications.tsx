@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { AdminLayout } from "./layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -195,294 +194,292 @@ export function CommunicationsPage() {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <MessageSquare className="w-6 h-6 text-purple-600" />
-              Communications
-            </h2>
-            <p className="text-gray-500 text-sm mt-1">
-              Manage all bookings and inquiries in one place
-            </p>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <MessageSquare className="w-6 h-6 text-purple-600" />
+            Communications
+          </h2>
+          <p className="text-gray-500 text-sm mt-1">
+            Manage all bookings and inquiries in one place
+          </p>
         </div>
+      </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Total</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                </div>
-                <MessageSquare className="w-8 h-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
-                </div>
-                <AlertCircle className="w-8 h-8 text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Bookings</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.bookings}</p>
-                </div>
-                <Calendar className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500">Inquiries</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.inquiries}</p>
-                </div>
-                <Mail className="w-8 h-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList>
-                  <TabsTrigger value="all">All ({allCommunications.length})</TabsTrigger>
-                  <TabsTrigger value="bookings">Bookings ({bookings.length})</TabsTrigger>
-                  <TabsTrigger value="inquiries">Inquiries ({inquiries.length})</TabsTrigger>
-                </TabsList>
-              </Tabs>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <Input
-                    placeholder="Search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 w-64"
-                  />
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
-                    <Filter className="w-4 h-4 mr-2" />
-                    <SelectValue placeholder="Filter status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
               </div>
+              <MessageSquare className="w-8 h-8 text-purple-500" />
             </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-              </div>
-            ) : filteredItems.length === 0 ? (
-              <div className="text-center py-12">
-                <MessageSquare className="w-12 h-12 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">No communications found</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredItems.map((item) => (
-                  <div
-                    key={`${item.type}-${item.id}`}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className={`p-2 rounded-lg ${item.type === "booking" ? "bg-blue-100" : "bg-green-100"}`}>
-                        {item.type === "booking" ? (
-                          <Calendar className="w-5 h-5 text-blue-600" />
-                        ) : (
-                          <Mail className="w-5 h-5 text-green-600" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-gray-900">{item.name}</p>
-                          <Badge variant="outline" className="text-xs">
-                            {item.type === "booking" ? "Booking" : "Inquiry"}
-                          </Badge>
-                          {getStatusBadge(item.status)}
-                        </div>
-                        <p className="text-sm text-gray-600 mb-1">{item.email}</p>
-                        {item.message && (
-                          <p className="text-sm text-gray-500 line-clamp-1">{item.message}</p>
-                        )}
-                        <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
-                          <Clock className="w-3 h-3" />
-                          {new Date(item.createdAt).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Select 
-                        value={item.status} 
-                        onValueChange={(v) => handleStatusChange(item, v)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setSelectedItem(item);
-                          setIsDialogOpen(true);
-                        }}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => handleDelete(item)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Pending</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+              </div>
+              <AlertCircle className="w-8 h-8 text-yellow-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Bookings</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.bookings}</p>
+              </div>
+              <Calendar className="w-8 h-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Inquiries</p>
+                <p className="text-2xl font-bold text-green-600">{stats.inquiries}</p>
+              </div>
+              <Mail className="w-8 h-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                {selectedItem?.type === "booking" ? (
-                  <>
-                    <Calendar className="w-5 h-5 text-blue-600" />
-                    Booking Details
-                  </>
-                ) : (
-                  <>
-                    <Mail className="w-5 h-5 text-green-600" />
-                    Inquiry Details
-                  </>
-                )}
-              </DialogTitle>
-            </DialogHeader>
-            {selectedItem && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Name</p>
-                    <p className="font-medium">{selectedItem.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Email</p>
-                    <p className="font-medium">{selectedItem.email}</p>
-                  </div>
-                  {selectedItem.phone && (
-                    <div>
-                      <p className="text-sm text-gray-500">Phone</p>
-                      <p className="font-medium">{selectedItem.phone}</p>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList>
+                <TabsTrigger value="all">All ({allCommunications.length})</TabsTrigger>
+                <TabsTrigger value="bookings">Bookings ({bookings.length})</TabsTrigger>
+                <TabsTrigger value="inquiries">Inquiries ({inquiries.length})</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 w-64"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Filter status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageSquare className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500">No communications found</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredItems.map((item) => (
+                <div
+                  key={`${item.type}-${item.id}`}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`p-2 rounded-lg ${item.type === "booking" ? "bg-blue-100" : "bg-green-100"}`}>
+                      {item.type === "booking" ? (
+                        <Calendar className="w-5 h-5 text-blue-600" />
+                      ) : (
+                        <Mail className="w-5 h-5 text-green-600" />
+                      )}
                     </div>
-                  )}
-                  <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    {getStatusBadge(selectedItem.status)}
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium text-gray-900">{item.name}</p>
+                        <Badge variant="outline" className="text-xs">
+                          {item.type === "booking" ? "Booking" : "Inquiry"}
+                        </Badge>
+                        {getStatusBadge(item.status)}
+                      </div>
+                      <p className="text-sm text-gray-600 mb-1">{item.email}</p>
+                      {item.message && (
+                        <p className="text-sm text-gray-500 line-clamp-1">{item.message}</p>
+                      )}
+                      <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                        <Clock className="w-3 h-3" />
+                        {new Date(item.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Select 
+                      value={item.status} 
+                      onValueChange={(v) => handleStatusChange(item, v)}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="in_progress">In Progress</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedItem(item);
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => handleDelete(item)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
-                
-                {selectedItem.type === "booking" && (selectedItem as BookingRequest).preferredDate && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Preferred Date</p>
-                      <p className="font-medium">{(selectedItem as BookingRequest).preferredDate}</p>
-                    </div>
-                    {(selectedItem as BookingRequest).preferredTime && (
-                      <div>
-                        <p className="text-sm text-gray-500">Preferred Time</p>
-                        <p className="font-medium">{(selectedItem as BookingRequest).preferredTime}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-                {selectedItem.type === "inquiry" && (selectedItem as CustomerInquiry).subject && (
-                  <div>
-                    <p className="text-sm text-gray-500">Subject</p>
-                    <p className="font-medium">{(selectedItem as CustomerInquiry).subject}</p>
-                  </div>
-                )}
-
-                {selectedItem.message && (
-                  <div>
-                    <p className="text-sm text-gray-500">Message</p>
-                    <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{selectedItem.message}</p>
-                  </div>
-                )}
-
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedItem?.type === "booking" ? (
+                <>
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                  Booking Details
+                </>
+              ) : (
+                <>
+                  <Mail className="w-5 h-5 text-green-600" />
+                  Inquiry Details
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedItem && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500">Received</p>
-                  <p className="font-medium">
-                    {new Date(selectedItem.createdAt).toLocaleDateString("en-US", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
+                  <p className="text-sm text-gray-500">Name</p>
+                  <p className="font-medium">{selectedItem.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Email</p>
+                  <p className="font-medium">{selectedItem.email}</p>
+                </div>
+                {selectedItem.phone && (
+                  <div>
+                    <p className="text-sm text-gray-500">Phone</p>
+                    <p className="font-medium">{selectedItem.phone}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm text-gray-500">Status</p>
+                  {getStatusBadge(selectedItem.status)}
                 </div>
               </div>
-            )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Close
-              </Button>
-              {selectedItem && (
-                <Button 
-                  variant="destructive"
-                  onClick={() => handleDelete(selectedItem)}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </Button>
+              
+              {selectedItem.type === "booking" && (selectedItem as BookingRequest).preferredDate && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Preferred Date</p>
+                    <p className="font-medium">{(selectedItem as BookingRequest).preferredDate}</p>
+                  </div>
+                  {(selectedItem as BookingRequest).preferredTime && (
+                    <div>
+                      <p className="text-sm text-gray-500">Preferred Time</p>
+                      <p className="font-medium">{(selectedItem as BookingRequest).preferredTime}</p>
+                    </div>
+                  )}
+                </div>
               )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </AdminLayout>
+
+              {selectedItem.type === "inquiry" && (selectedItem as CustomerInquiry).subject && (
+                <div>
+                  <p className="text-sm text-gray-500">Subject</p>
+                  <p className="font-medium">{(selectedItem as CustomerInquiry).subject}</p>
+                </div>
+              )}
+
+              {selectedItem.message && (
+                <div>
+                  <p className="text-sm text-gray-500">Message</p>
+                  <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{selectedItem.message}</p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm text-gray-500">Received</p>
+                <p className="font-medium">
+                  {new Date(selectedItem.createdAt).toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Close
+            </Button>
+            {selectedItem && (
+              <Button 
+                variant="destructive"
+                onClick={() => handleDelete(selectedItem)}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

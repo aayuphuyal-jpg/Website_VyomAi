@@ -298,7 +298,7 @@ export function PricingSection() {
                 </Card>
               ))
             ) : (
-              packages.map((pkg, index) => (
+              packages.filter(pkg => pkg.enabled !== false).map((pkg, index) => (
               <div
                 key={pkg.id}
                 className={`relative overflow-hidden flex flex-col transition-all duration-300 group ${
@@ -376,6 +376,10 @@ export function PricingSection() {
                       variant={pkg.highlighted ? "default" : "outline"}
                       className="w-full min-h-11 group/btn mb-6"
                       data-testid={`button-pricing-${pkg.id}`}
+                      onClick={() => {
+                        setSelectedOneTimePackage(pkg);
+                        setIsOneTimeDialogOpen(true);
+                      }}
                     >
                       <span className="group-hover/btn:translate-x-1 transition-transform">
                         Get Started
@@ -467,7 +471,9 @@ export function PricingSection() {
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-primary" />
-                  Request Your Personalized Quote
+                  {selectedOneTimePackage?.name === "Enterprise" || selectedOneTimePackage?.oneTimeContactEmail 
+                    ? "Request Your Personalized Quote" 
+                    : "Book Your Plan"}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">

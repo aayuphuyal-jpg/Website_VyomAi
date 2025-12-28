@@ -8,7 +8,7 @@ import {
   serviceItemsTable, solutionsContentTable, solutionItemsTable,
   socialMediaSyncLogsTable, socialMediaApiConfigTable
 } from "../shared/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
   type User, type InsertUser, type Article, type InsertArticle, type SiteSettings, type VisitorStats, type TeamMember, type InsertTeamMember, type PricingPackage, type InsertPricingPackage, type ProjectDiscussion, type InsertProjectDiscussion, type BookingRequest, type InsertBookingRequest, type SocialMediaAnalytics, type InsertSocialMediaAnalytics, type SocialMediaIntegration, type InsertSocialMediaIntegration, type OneTimePricingRequest, type InsertOneTimePricingRequest, type CustomerInquiry, type InsertCustomerInquiry, type PopupForm, type InsertPopupForm,
   type HeroContent, type InsertHeroContent, type AboutContent, type InsertAboutContent, type AboutValue, type InsertAboutValue, type ServicesContent, type InsertServicesContent, type ServiceItem, type InsertServiceItem, type SolutionsContent, type InsertSolutionsContent, type SolutionItem, type InsertSolutionItem
@@ -126,7 +126,20 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   constructor() {
     this.initializeDefaultUsers().catch(err => console.error("Failed to initialize users:", err));
+    this.initializeDefaultUsers().catch(err => console.error("Failed to initialize users:", err));
     this.initializeDefaultSettings().catch(err => console.error("Failed to initialize settings:", err));
+    this.ensureSchema().catch(err => console.error("Failed to ensure schema:", err));
+  }
+
+  private async ensureSchema(): Promise<void> {
+    try {
+        if (!db) return;
+        // Auto-migration: Ensure smtp_password column exists
+        await db.execute(sql`ALTER TABLE site_settings ADD COLUMN IF NOT EXISTS smtp_password TEXT;`);
+        console.log("✅ Auto-migration: Checked/Added 'smtp_password' column to site_settings");
+    } catch (error) {
+        console.error("❌ Auto-migration failed:", error);
+    }
   }
 
   private async initializeDefaultUsers(): Promise<void> {

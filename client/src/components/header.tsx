@@ -96,7 +96,11 @@ export function Header() {
                 asChild
                 data-testid="button-email-login"
               >
-                <a href="/email/login">
+                <a 
+                  href="https://accounts.zoho.com/signin" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
                   <Mail className="w-4 h-4 mr-2" />
                   Email
                 </a>

@@ -79,7 +79,8 @@ export function FloatingWidgets({ onAIChatbotOpen }: FloatingWidgetsProps) {
       const response = await apiRequest("POST", "/api/chat", {
         messages: [...messages, userMessage],
       });
-      const data = await response.json();
+      // apiRequest already returns parsed JSON, so we use the response directly
+      const data = response;
       setMessages((prev) => [...prev, { role: "assistant", content: data.response }]);
     } catch (error) {
       setMessages((prev) => [

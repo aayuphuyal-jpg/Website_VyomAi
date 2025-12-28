@@ -265,7 +265,7 @@ export function MediaSection() {
 
       {/* Modal */}
       <Dialog open={!!selectedArticle} onOpenChange={() => setSelectedArticle(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto z-[9999] bg-background/95 backdrop-blur-xl border-white/20">
           {selectedArticle && (
             <>
               <DialogHeader>
@@ -301,14 +301,15 @@ export function MediaSection() {
               )}
               
               {selectedArticle.type === "video" && selectedArticle.mediaUrl && (
-                <div className="aspect-video mb-6 rounded-lg overflow-hidden">
+                <div className="aspect-video mb-10 rounded-lg overflow-hidden bg-black/5 border border-border/50 relative z-20 shadow-sm block w-full">
                   <iframe
                     src={(() => {
                       try {
                         const url = new URL(selectedArticle.mediaUrl);
                         if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
                           const videoId = url.searchParams.get("v") || url.pathname.split("/").pop();
-                          return `https://www.youtube.com/embed/${videoId}`;
+                          // Add origin to fix Error 153 (domain permissions)
+                          return `https://www.youtube.com/embed/${videoId}?origin=${window.location.origin}`;
                         }
                         return selectedArticle.mediaUrl;
                       } catch (e) {
@@ -318,17 +319,18 @@ export function MediaSection() {
                     className="w-full h-full"
                     allowFullScreen
                     title={selectedArticle.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   />
                 </div>
               )}
               
-              <div className="prose prose-neutral dark:prose-invert max-w-none">
+              <div className="prose prose-neutral dark:prose-invert max-w-none pb-20 relative z-10">
                 <p className="whitespace-pre-wrap text-base leading-relaxed">{selectedArticle.content}</p>
               </div>
               
               {selectedArticle.type === "demo" && selectedArticle.mediaUrl && (
-                <Button asChild className="mt-6 w-full">
+                <Button asChild className="mt-8 w-full mb-10">
                   <a href={selectedArticle.mediaUrl} target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Open Demo in New Tab

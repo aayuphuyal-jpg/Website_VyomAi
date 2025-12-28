@@ -55,8 +55,9 @@ export function FloatingBookingBot() {
       toast({ title: "Booking request sent successfully! We'll contact you soon." });
       setFormData({ name: "", email: "", companyOrPersonal: "", message: "" });
       setIsOpen(false);
-    } catch (error) {
-      toast({ title: "Failed to send booking request", variant: "destructive" });
+    } catch (error: any) {
+      const errorMessage = error.message || "Failed to send booking request. Please try again.";
+      toast({ title: "Submission Failed", description: errorMessage, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { AdminLayout } from "./layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,15 +39,7 @@ const animationStyles = [
   { id: "flip", name: "Flip", icon: FlipHorizontal, description: "3D flip entrance" },
 ];
 
-const triggerTypes = [
-  { id: "immediate", name: "Immediately on page load" },
-  { id: "delay_5s", name: "After 5 seconds" },
-  { id: "delay_10s", name: "After 10 seconds" },
-  { id: "delay_30s", name: "After 30 seconds" },
-  { id: "scroll_25", name: "When scrolled 25%" },
-  { id: "scroll_50", name: "When scrolled 50%" },
-  { id: "exit_intent", name: "On exit intent" },
-];
+
 
 export function PopupFormsPage() {
   const { toast } = useToast();
@@ -263,311 +254,310 @@ export function PopupFormsPage() {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-purple-600" />
-              Popup Forms
-            </h2>
-            <p className="text-gray-500 text-sm mt-1">
-              Create and manage popup forms with templates and animations
-            </p>
-          </div>
-          <Button onClick={openNewDialog} className="bg-purple-600 hover:bg-purple-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Create Popup Form
-          </Button>
+
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-purple-600" />
+            Popup Forms
+          </h2>
+          <p className="text-gray-500 text-sm mt-1">
+            Create and manage popup forms with templates and animations
+          </p>
         </div>
+        <Button onClick={openNewDialog} className="bg-purple-600 hover:bg-purple-700">
+          <Plus className="w-4 h-4 mr-2" />
+          Create Popup Form
+        </Button>
+      </div>
 
-        {isLoading ? (
-          <div className="flex justify-center p-8">
-            <Loader2 className="h-6 w-6 animate-spin" />
-          </div>
-        ) : popupForms.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Sparkles className="w-12 h-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No popup forms yet</h3>
-              <p className="text-gray-500 text-center mb-4">
-                Create your first popup form to engage visitors with marketing offers, greetings, or lead capture forms.
-              </p>
-              <Button onClick={openNewDialog}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Popup Form
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {popupForms.map((form) => {
-              const template = templateTypes.find(t => t.id === form.formType);
-              const animation = animationStyles.find(a => a.id === form.animationStyle);
-              const TemplateIcon = template?.icon || MessageSquare;
-              
-              return (
-                <Card key={form.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="p-2 rounded-lg bg-purple-100">
-                          <TemplateIcon className="w-5 h-5 text-purple-600" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg">{form.name || "Untitled Form"}</CardTitle>
-                          <p className="text-xs text-gray-500">{template?.name || "Custom"}</p>
-                        </div>
-                      </div>
-                      <Badge variant={form.enabled ? "default" : "secondary"}>
-                        {form.enabled ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="text-sm text-gray-600">
-                      <p className="font-medium">{form.title || "No title"}</p>
-                      <p className="text-xs text-gray-400 line-clamp-2 mt-1">{form.message || "No message"}</p>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      {animation?.icon && <animation.icon className="w-3 h-3" />}
-                      <span>{animation?.name || "Fade"}</span>
-                    </div>
+      {isLoading ? (
+        <div className="flex justify-center p-8">
+          <Loader2 className="h-6 w-6 animate-spin" />
+        </div>
+      ) : popupForms.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Sparkles className="w-12 h-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No popup forms yet</h3>
+            <p className="text-gray-500 text-center mb-4">
+              Create your first popup form to engage visitors with marketing offers, greetings, or lead capture forms.
+            </p>
+            <Button onClick={openNewDialog}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Popup Form
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {popupForms.map((form) => {
+            const template = templateTypes.find(t => t.id === form.formType);
+            const animation = animationStyles.find(a => a.id === form.animationStyle);
+            const TemplateIcon = template?.icon || MessageSquare;
+            
+            return (
+              <Card key={form.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => openEditDialog(form)}>
-                        <Edit className="w-3 h-3 mr-1" />
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => deleteMutation.mutate(form.id)}
-                      >
-                        <Trash2 className="w-3 h-3 mr-1" />
-                        Delete
-                      </Button>
+                      <div className="p-2 rounded-lg bg-purple-100">
+                        <TemplateIcon className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{form.name || "Untitled Form"}</CardTitle>
+                        <p className="text-xs text-gray-500">{template?.name || "Custom"}</p>
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+                    <Badge variant={form.enabled ? "default" : "secondary"}>
+                      {form.enabled ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="text-sm text-gray-600">
+                    <p className="font-medium">{form.title || "No title"}</p>
+                    <p className="text-xs text-gray-400 line-clamp-2 mt-1">{form.message || "No message"}</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    {animation?.icon && <animation.icon className="w-3 h-3" />}
+                    <span>{animation?.name || "Fade"}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => openEditDialog(form)}>
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => deleteMutation.mutate(form.id)}
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingForm ? "Edit Popup Form" : "Create Popup Form"}</DialogTitle>
-              <DialogDescription>
-                {editingForm ? "Update your popup form settings" : "Create a new popup form to engage visitors"}
-              </DialogDescription>
-            </DialogHeader>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingForm ? "Edit Popup Form" : "Create Popup Form"}</DialogTitle>
+            <DialogDescription>
+              {editingForm ? "Update your popup form settings" : "Create a new popup form to engage visitors"}
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <Label className="mb-2 block">Form Name</Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g., Holiday Promo Popup"
+                />
+              </div>
+
+              <div>
+                <Label className="mb-2 block">Template Type</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {templateTypes.map((template) => (
+                    <button
+                      key={template.id}
+                      type="button"
+                      onClick={() => applyTemplate(template.id)}
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                        formData.formType === template.id
+                          ? "border-purple-500 bg-purple-50"
+                          : "border-gray-200 hover:border-purple-300"
+                      }`}
+                    >
+                      <template.icon className={`w-5 h-5 mb-1 ${
+                        formData.formType === template.id ? "text-purple-600" : "text-gray-400"
+                      }`} />
+                      <p className={`text-xs font-medium ${
+                        formData.formType === template.id ? "text-purple-700" : "text-gray-700"
+                      }`}>{template.name}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="mb-2 block">Title</Label>
+                <Input
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Popup title"
+                />
+              </div>
+
+              <div>
+                <Label className="mb-2 block">Message</Label>
+                <Textarea
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  placeholder="Your popup message..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label className="mb-2 block">Form Name</Label>
+                  <Label className="mb-2 block">Button Text</Label>
                   <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="e.g., Holiday Promo Popup"
+                    value={formData.buttonText}
+                    onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
+                    placeholder="Submit"
                   />
                 </div>
-
                 <div>
-                  <Label className="mb-2 block">Template Type</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {templateTypes.map((template) => (
-                      <button
-                        key={template.id}
-                        type="button"
-                        onClick={() => applyTemplate(template.id)}
-                        className={`p-3 rounded-xl border-2 text-left transition-all ${
-                          formData.formType === template.id
-                            ? "border-purple-500 bg-purple-50"
-                            : "border-gray-200 hover:border-purple-300"
-                        }`}
-                      >
-                        <template.icon className={`w-5 h-5 mb-1 ${
-                          formData.formType === template.id ? "text-purple-600" : "text-gray-400"
-                        }`} />
-                        <p className={`text-xs font-medium ${
-                          formData.formType === template.id ? "text-purple-700" : "text-gray-700"
-                        }`}>{template.name}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="mb-2 block">Title</Label>
+                  <Label className="mb-2 block">Button Link (optional)</Label>
                   <Input
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    placeholder="Popup title"
-                  />
-                </div>
-
-                <div>
-                  <Label className="mb-2 block">Message</Label>
-                  <Textarea
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder="Your popup message..."
-                    rows={3}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="mb-2 block">Button Text</Label>
-                    <Input
-                      value={formData.buttonText}
-                      onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
-                      placeholder="Submit"
-                    />
-                  </div>
-                  <div>
-                    <Label className="mb-2 block">Button Link (optional)</Label>
-                    <Input
-                      value={formData.buttonLink}
-                      onChange={(e) => setFormData({ ...formData, buttonLink: e.target.value })}
-                      placeholder="https://..."
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="mb-2 block">Image URL (optional)</Label>
-                  <Input
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                    value={formData.buttonLink}
+                    onChange={(e) => setFormData({ ...formData, buttonLink: e.target.value })}
                     placeholder="https://..."
                   />
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <Label className="mb-2 block">Animation Style</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {animationStyles.map((style) => (
-                      <button
-                        key={style.id}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, animationStyle: style.id })}
-                        className={`p-3 rounded-xl border-2 text-left transition-all ${
-                          formData.animationStyle === style.id
-                            ? "border-purple-500 bg-purple-50"
-                            : "border-gray-200 hover:border-purple-300"
-                        }`}
-                      >
-                        <style.icon className={`w-4 h-4 mb-1 ${
-                          formData.animationStyle === style.id ? "text-purple-600" : "text-gray-400"
-                        }`} />
-                        <p className={`text-xs font-medium ${
-                          formData.animationStyle === style.id ? "text-purple-700" : "text-gray-700"
-                        }`}>{style.name}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="mb-2 block">Display Delay (seconds)</Label>
-                  <Select value={formData.showDelay} onValueChange={(v) => setFormData({ ...formData, showDelay: v })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">Immediately</SelectItem>
-                      <SelectItem value="5">After 5 seconds</SelectItem>
-                      <SelectItem value="10">After 10 seconds</SelectItem>
-                      <SelectItem value="30">After 30 seconds</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="mb-2 block text-xs">Background</Label>
-                    <Input
-                      type="color"
-                      value={formData.backgroundColor}
-                      onChange={(e) => setFormData({ ...formData, backgroundColor: e.target.value })}
-                      className="h-10 p-1"
-                    />
-                  </div>
-                  <div>
-                    <Label className="mb-2 block text-xs">Text Color</Label>
-                    <Input
-                      type="color"
-                      value={formData.textColor}
-                      onChange={(e) => setFormData({ ...formData, textColor: e.target.value })}
-                      className="h-10 p-1"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Switch
-                    checked={formData.dismissable}
-                    onCheckedChange={(v) => setFormData({ ...formData, dismissable: v })}
-                  />
-                  <Label className="cursor-pointer">Allow users to dismiss popup</Label>
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                  <Switch
-                    checked={formData.enabled}
-                    onCheckedChange={(v) => setFormData({ ...formData, enabled: v })}
-                  />
-                  <Label className="cursor-pointer">Enable this popup (only one can be active)</Label>
-                </div>
-
-                <div className="border rounded-xl p-4 bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 min-h-[200px] flex items-center justify-center">
-                  <div 
-                    className={`rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center ${getAnimationClass(formData.animationStyle)}`}
-                    style={{ 
-                      backgroundColor: formData.backgroundColor,
-                      color: formData.textColor,
-                    }}
-                  >
-                    {formData.imageUrl && (
-                      <img src={formData.imageUrl} alt="Popup" className="w-16 h-16 mx-auto mb-3 rounded-xl object-cover" />
-                    )}
-                    <h3 className="text-xl font-bold mb-2">{formData.title || "Your Title"}</h3>
-                    <p className="text-sm mb-4 opacity-80">{formData.message || "Your message here..."}</p>
-                    <button 
-                      className="px-5 py-2 rounded-xl font-medium shadow-lg text-white bg-purple-600 hover:bg-purple-700"
-                    >
-                      {formData.buttonText || "Button"}
-                    </button>
-                  </div>
-                </div>
+              <div>
+                <Label className="mb-2 block">Image URL (optional)</Label>
+                <Input
+                  value={formData.imageUrl}
+                  onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                  placeholder="https://..."
+                />
               </div>
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSave}
-                disabled={createMutation.isPending || updateMutation.isPending}
-                className="bg-purple-600 hover:bg-purple-700"
-              >
-                {(createMutation.isPending || updateMutation.isPending) && (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                )}
-                <Save className="w-4 h-4 mr-2" />
-                {editingForm ? "Update" : "Create"} Popup
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </AdminLayout>
+            <div className="space-y-4">
+              <div>
+                <Label className="mb-2 block">Animation Style</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {animationStyles.map((style) => (
+                    <button
+                      key={style.id}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, animationStyle: style.id })}
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                        formData.animationStyle === style.id
+                          ? "border-purple-500 bg-purple-50"
+                          : "border-gray-200 hover:border-purple-300"
+                      }`}
+                    >
+                      <style.icon className={`w-4 h-4 mb-1 ${
+                        formData.animationStyle === style.id ? "text-purple-600" : "text-gray-400"
+                      }`} />
+                      <p className={`text-xs font-medium ${
+                        formData.animationStyle === style.id ? "text-purple-700" : "text-gray-700"
+                      }`}>{style.name}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="mb-2 block">Display Delay (seconds)</Label>
+                <Select value={formData.showDelay} onValueChange={(v) => setFormData({ ...formData, showDelay: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Immediately</SelectItem>
+                    <SelectItem value="5">After 5 seconds</SelectItem>
+                    <SelectItem value="10">After 10 seconds</SelectItem>
+                    <SelectItem value="30">After 30 seconds</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="mb-2 block text-xs">Background</Label>
+                  <Input
+                    type="color"
+                    value={formData.backgroundColor}
+                    onChange={(e) => setFormData({ ...formData, backgroundColor: e.target.value })}
+                    className="h-10 p-1"
+                  />
+                </div>
+                <div>
+                  <Label className="mb-2 block text-xs">Text Color</Label>
+                  <Input
+                    type="color"
+                    value={formData.textColor}
+                    onChange={(e) => setFormData({ ...formData, textColor: e.target.value })}
+                    className="h-10 p-1"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <Switch
+                  checked={formData.dismissable}
+                  onCheckedChange={(v) => setFormData({ ...formData, dismissable: v })}
+                />
+                <Label className="cursor-pointer">Allow users to dismiss popup</Label>
+              </div>
+
+              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                <Switch
+                  checked={formData.enabled}
+                  onCheckedChange={(v) => setFormData({ ...formData, enabled: v })}
+                />
+                <Label className="cursor-pointer">Enable this popup (only one can be active)</Label>
+              </div>
+
+              <div className="border rounded-xl p-4 bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 min-h-[200px] flex items-center justify-center">
+                <div 
+                  className={`rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center ${getAnimationClass(formData.animationStyle)}`}
+                  style={{ 
+                    backgroundColor: formData.backgroundColor,
+                    color: formData.textColor,
+                  }}
+                >
+                  {formData.imageUrl && (
+                    <img src={formData.imageUrl} alt="Popup" className="w-16 h-16 mx-auto mb-3 rounded-xl object-cover" />
+                  )}
+                  <h3 className="text-xl font-bold mb-2">{formData.title || "Your Title"}</h3>
+                  <p className="text-sm mb-4 opacity-80">{formData.message || "Your message here..."}</p>
+                  <button 
+                    className="px-5 py-2 rounded-xl font-medium shadow-lg text-white bg-purple-600 hover:bg-purple-700"
+                  >
+                    {formData.buttonText || "Button"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave}
+              disabled={createMutation.isPending || updateMutation.isPending}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {(createMutation.isPending || updateMutation.isPending) && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
+              <Save className="w-4 h-4 mr-2" />
+              {editingForm ? "Update" : "Create"} Popup
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

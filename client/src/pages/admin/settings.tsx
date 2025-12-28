@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { AdminLayout } from "./layout";
+// AdminLayout import removed
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+// Textarea import removed
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -11,9 +10,18 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type SiteSettings } from "@shared/schema";
 import { 
-  Save, Loader2, Settings, Bell, Image, Type, MousePointer, 
-  Eye, Sparkles, Zap, Upload, Trash2, Play
+  Eye, Bell, Save, Loader2, Settings, PenLine, Globe, Shield, Lock, Server
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export function SettingsPage() {
   const { toast } = useToast();
@@ -27,6 +35,10 @@ export function SettingsPage() {
   const [popupDismissable, setPopupDismissable] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
 
+  // Home Section Visibility State
+  const [showTeamSection, setShowTeamSection] = useState(true);
+  const [showPricingSection, setShowPricingSection] = useState(true);
+
   const { data: settings } = useQuery<SiteSettings>({
     queryKey: ["/api/settings"],
   });
@@ -39,6 +51,22 @@ export function SettingsPage() {
     if (settings?.welcomePopupImageUrl) setPopupImageUrl(settings.welcomePopupImageUrl);
     if (settings?.welcomePopupAnimationStyle) setPopupAnimationStyle(settings.welcomePopupAnimationStyle);
     if (settings?.welcomePopupDismissable !== undefined) setPopupDismissable(settings.welcomePopupDismissable);
+    
+    // Sync visibility settings
+    if (settings?.showTeamSection !== undefined) setShowTeamSection(settings.showTeamSection);
+    if (settings?.showPricingSection !== undefined) setShowPricingSection(settings.showPricingSection);
+
+    // Sync SMTP settings
+    if (settings) {
+      setSmtpConfig(prev => ({
+        ...prev,
+        host: settings.smtpHost || "",
+        port: settings.smtpPort || "587",
+        user: settings.smtpUser || "",
+        password: settings.smtpPassword || "", 
+        secure: settings.smtpSecure || false
+      }));
+    }
   }, [settings]);
 
   const updateSettingsMutation = useMutation({
@@ -54,17 +82,43 @@ export function SettingsPage() {
       toast({ title: "Error", description: "Failed to save settings", variant: "destructive" });
     },
   });
+  const [configOpen, setConfigOpen] = useState(false);
+  const [smtpConfig, setSmtpConfig] = useState({
+    host: "",
+    port: "587",
+    user: "",
+    password: "",
+    secure: false
+  });
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setPopupImageUrl(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const emailConfigMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const token = localStorage.getItem("vyomai-admin-token");
+      return apiRequest("PUT", "/api/admin/email-config", data, { Authorization: `Bearer ${token}` });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+      toast({ title: "Email configuration saved" });
+      setConfigOpen(false);
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to save configuration", variant: "destructive" });
+    },
+  });
+
+  const handleSaveConfig = () => {
+    emailConfigMutation.mutate({
+      smtpHost: smtpConfig.host,
+      smtpPort: smtpConfig.port,
+      smtpUser: smtpConfig.user,
+      smtpPassword: smtpConfig.password,
+      smtpSecure: smtpConfig.secure,
+      // Create defaults for others
+      emailProvider: "smtp",
+      emailFeaturesEnabled: true
+    });
   };
+
 
   const handleSaveAll = () => {
     updateSettingsMutation.mutate({
@@ -75,229 +129,289 @@ export function SettingsPage() {
       welcomePopupImageUrl: popupImageUrl,
       welcomePopupAnimationStyle: popupAnimationStyle,
       welcomePopupDismissable: popupDismissable,
+      showTeamSection,
+      showPricingSection,
     });
   };
 
-  const animationStyles = [
-    { id: "fade", name: "Fade In", icon: Sparkles, description: "Smooth fade effect" },
-    { id: "slide", name: "Slide Up", icon: MousePointer, description: "Slides from bottom" },
-    { id: "zoom", name: "Zoom In", icon: Zap, description: "Zooms from center" },
-    { id: "glow", name: "Glow Effect", icon: Eye, description: "Glowing entrance" },
-  ];
+
+
+  const [testEmail, setTestEmail] = useState("");
+  const [isTesting, setIsTesting] = useState(false);
+
+  const sendTestEmail = async () => {
+    if (!testEmail) {
+      toast({ title: "Error", description: "Please enter an email address", variant: "destructive" });
+      return;
+    }
+    
+    setIsTesting(true);
+    try {
+      const token = localStorage.getItem("vyomai-admin-token");
+      const res = await fetch("/api/admin/test-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: testEmail }),
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        toast({ title: "Success", description: `Test email sent via ${data.provider}!` });
+        setTestEmail("");
+      } else {
+        toast({ title: "Error", description: data.error || "Failed to send test email", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to send test email", variant: "destructive" });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Settings className="w-6 h-6 text-purple-600" />
-              Site Settings
-            </h2>
-            <p className="text-gray-500 text-sm mt-1">
-              Configure site-wide settings and welcome popup
-            </p>
-          </div>
-          <Button 
-            onClick={handleSaveAll}
-            disabled={updateSettingsMutation.isPending}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            {updateSettingsMutation.isPending ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
-            Save All Settings
-          </Button>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Settings className="w-6 h-6 text-purple-600" />
+            Site Settings
+          </h2>
+          <p className="text-gray-500 text-sm mt-1">
+            Configure site-wide settings and welcome popup
+          </p>
         </div>
+        <Button 
+          onClick={handleSaveAll}
+          disabled={updateSettingsMutation.isPending}
+          className="bg-purple-600 hover:bg-purple-700"
+        >
+          {updateSettingsMutation.isPending ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
+          Save All Settings
+        </Button>
+      </div>
 
-        <Card className="border-gray-200 shadow-sm">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-gray-900 flex items-center gap-2">
-                  <Bell className="w-5 h-5 text-purple-600" />
+      {/* Smart Email & AI Status Card */}
+      <Card className="border-gray-200 shadow-sm bg-gradient-to-br from-white to-purple-50/50">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-gray-900 flex items-center gap-2">
+            <Loader2 className="w-5 h-5 text-purple-600 animate-spin-slow" />
+            Smart AI & Email System
+          </CardTitle>
+          <CardDescription className="text-gray-500">
+            Real-time status of your autonomous agents
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-green-50 border border-green-100 flex flex-col gap-2">
+              <span className="text-xs font-semibold text-green-700 uppercase tracking-wider">AI Brain</span>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-lg font-bold text-gray-900">Active</span>
+              </div>
+              <p className="text-xs text-green-600">OpenAI GPT-4 Connected</p>
+            </div>
+            <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 flex flex-col gap-2">
+              <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">Email System</span>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                <span className="text-lg font-bold text-gray-900">Forwarding</span>
+              </div>
+              <p className="text-xs text-blue-600">To: info@vyomai.cloud</p>
+            </div>
+            <div className="p-4 rounded-xl bg-purple-50 border border-purple-100 flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-semibold text-purple-700 uppercase tracking-wider">Configure</span>
+                <Dialog open={configOpen} onOpenChange={setConfigOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-purple-200 rounded-full">
+                      <Settings className="w-3.5 h-3.5 text-purple-700" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Email Server Settings</DialogTitle>
+                      <DialogDescription>
+                        Configure your SMTP provider details here.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="host" className="text-right">
+                          Host
+                        </Label>
+                        <Input
+                          id="host"
+                          placeholder="smtp.example.com"
+                          className="col-span-3"
+                          value={smtpConfig.host}
+                          onChange={(e) => setSmtpConfig(prev => ({ ...prev, host: e.target.value }))}
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="port" className="text-right">
+                          Port
+                        </Label>
+                        <Input
+                          id="port"
+                          placeholder="587"
+                          className="col-span-3"
+                          value={smtpConfig.port}
+                          onChange={(e) => setSmtpConfig(prev => ({ ...prev, port: e.target.value }))}
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="username" className="text-right">
+                          User
+                        </Label>
+                        <Input
+                          id="username"
+                          placeholder="email@domain.com"
+                          className="col-span-3"
+                          value={smtpConfig.user}
+                          onChange={(e) => setSmtpConfig(prev => ({ ...prev, user: e.target.value }))}
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="password" className="text-right">
+                          Pass
+                        </Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          placeholder="••••••••"
+                          className="col-span-3"
+                          value={smtpConfig.password}
+                          onChange={(e) => setSmtpConfig(prev => ({ ...prev, password: e.target.value }))}
+                        />
+                      </div>
+                      <div className="flex items-center justify-end gap-2">
+                         <Label htmlFor="secure" className="text-xs text-gray-500">Secure (SSL)</Label>
+                         <Switch 
+                            id="secure"
+                            checked={smtpConfig.secure}
+                            onCheckedChange={(c) => setSmtpConfig(prev => ({ ...prev, secure: c }))}
+                         />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={handleSaveConfig} disabled={emailConfigMutation.isPending}>
+                        {emailConfigMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Save Configuration
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-purple-500" />
+                <span className="text-lg font-bold text-gray-900">Settings</span>
+              </div>
+              <p className="text-xs text-purple-600">SMTP / SendGrid Keys</p>
+            </div>
+          </div>
+
+          {/* Quick Test */}
+          <div className="flex items-end gap-4 p-4 bg-white/50 rounded-xl border border-gray-100">
+            <div className="flex-1 space-y-2">
+              <Label>Send Test Email</Label>
+              <div className="flex gap-2">
+                 {/* Input removed from import, replaced with standard input element to avoid import issues or need to import Input component */}
+                 <input
+                  type="email"
+                  placeholder="Enter email to test..."
+                  value={testEmail}
+                  onChange={(e) => setTestEmail(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <Button 
+                  onClick={sendTestEmail}
+                  disabled={isTesting}
+                  variant="outline"
+                >
+                  {isTesting ? "Sending..." : "Test"}
+                </Button>
+              </div>
+            </div>
+            <div className="text-xs text-gray-400 pb-2">
+              Verifies AI content generation and delivery.
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-gray-200 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-gray-900 flex items-center gap-2">
+            <Eye className="w-5 h-5 text-purple-600" />
+            Homepage Sections
+          </CardTitle>
+          <CardDescription className="text-gray-500">
+            Control which sections are displayed on the public home page
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="space-y-1">
+                <Label className="text-base font-medium text-gray-900">Meet the Innovators</Label>
+                <p className="text-sm text-gray-500">Show the team section on home page</p>
+              </div>
+              <div className="flex items-center gap-2">
+                 <Switch
+                  checked={showTeamSection}
+                  onCheckedChange={setShowTeamSection}
+                />
+                <span className={`text-sm font-medium w-16 text-right ${showTeamSection ? "text-green-600" : "text-gray-400"}`}>
+                  {showTeamSection ? "Visible" : "Hidden"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="space-y-1">
+                <Label className="text-base font-medium text-gray-900">Pricing Plans</Label>
+                <p className="text-sm text-gray-500">Show the pricing options on home page</p>
+              </div>
+               <div className="flex items-center gap-2">
+                 <Switch
+                  checked={showPricingSection}
+                  onCheckedChange={setShowPricingSection}
+                />
+                <span className={`text-sm font-medium w-16 text-right ${showPricingSection ? "text-green-600" : "text-gray-400"}`}>
+                  {showPricingSection ? "Visible" : "Hidden"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="space-y-1">
+                <CardTitle className="text-base font-medium text-gray-900 flex items-center gap-2">
+                  <Bell className="w-4 h-4 text-purple-600" />
                   Welcome Popup
                 </CardTitle>
-                <CardDescription className="text-gray-500">
-                  Display an animated message to visitors before they see your website
-                </CardDescription>
+                <p className="text-sm text-gray-500">Show welcome popup to visitors</p>
               </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowPreview(!showPreview)}
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  {showPreview ? "Hide Preview" : "Preview"}
-                </Button>
+              <div className="flex items-center gap-2">
                 <Switch
                   checked={popupEnabled}
                   onCheckedChange={setPopupEnabled}
                 />
-                <span className={`text-sm font-medium ${popupEnabled ? "text-green-600" : "text-gray-400"}`}>
+                <span className={`text-sm font-medium w-16 text-right ${popupEnabled ? "text-green-600" : "text-gray-400"}`}>
                   {popupEnabled ? "Enabled" : "Disabled"}
                 </span>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {showPreview && (
-              <div className="relative rounded-xl overflow-hidden border border-gray-200 bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 p-8 min-h-[300px] flex items-center justify-center">
-                <div 
-                  className={`bg-white/95 backdrop-blur-xl rounded-2xl p-8 max-w-md w-full shadow-2xl text-center transform transition-all duration-500 ${
-                    popupAnimationStyle === "zoom" ? "scale-100 animate-pulse" : 
-                    popupAnimationStyle === "slide" ? "translate-y-0" :
-                    popupAnimationStyle === "glow" ? "ring-4 ring-purple-400/50" : ""
-                  }`}
-                >
-                  {popupImageUrl && (
-                    <img 
-                      src={popupImageUrl} 
-                      alt="Popup" 
-                      className="w-20 h-20 mx-auto mb-4 rounded-xl object-cover"
-                    />
-                  )}
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">{popupTitle || "Your Title"}</h3>
-                  <p className="text-gray-600 mb-6">{popupMessage || "Your message here..."}</p>
-                  <button className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all">
-                    {popupButtonText || "Button Text"}
-                  </button>
-                  {popupDismissable && (
-                    <p className="text-xs text-gray-400 mt-4">Click anywhere to dismiss</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-gray-700 mb-2 block">
-                    <Type className="w-4 h-4 inline mr-2" />
-                    Popup Title
-                  </Label>
-                  <Input
-                    value={popupTitle}
-                    onChange={(e) => setPopupTitle(e.target.value)}
-                    placeholder="Welcome to VyomAi"
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-gray-700 mb-2 block">Message</Label>
-                  <Textarea
-                    value={popupMessage}
-                    onChange={(e) => setPopupMessage(e.target.value)}
-                    placeholder="Experience the future of AI solutions..."
-                    rows={3}
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-gray-700 mb-2 block">
-                    <MousePointer className="w-4 h-4 inline mr-2" />
-                    Button Text
-                  </Label>
-                  <Input
-                    value={popupButtonText}
-                    onChange={(e) => setPopupButtonText(e.target.value)}
-                    placeholder="Explore Now"
-                    className="w-full"
-                  />
-                </div>
-
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <Switch
-                    checked={popupDismissable}
-                    onCheckedChange={setPopupDismissable}
-                  />
-                  <Label className="text-gray-700 cursor-pointer">Allow users to dismiss popup</Label>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-gray-700 mb-2 block">
-                    <Image className="w-4 h-4 inline mr-2" />
-                    Popup Image/Logo
-                  </Label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-4 text-center hover:border-purple-400 transition-colors">
-                    {popupImageUrl ? (
-                      <div className="relative inline-block">
-                        <img 
-                          src={popupImageUrl} 
-                          alt="Preview" 
-                          className="w-24 h-24 rounded-xl object-cover mx-auto"
-                        />
-                        <button
-                          onClick={() => setPopupImageUrl("")}
-                          className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg hover:bg-red-600"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ) : (
-                      <label className="cursor-pointer block">
-                        <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                        <p className="text-sm text-gray-600">Click to upload image</p>
-                        <p className="text-xs text-gray-400">PNG, JPG up to 2MB</p>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                        />
-                      </label>
-                    )}
-                  </div>
-                  <div className="mt-2">
-                    <Input
-                      value={popupImageUrl.startsWith("data:") ? "" : popupImageUrl}
-                      onChange={(e) => setPopupImageUrl(e.target.value)}
-                      placeholder="Or paste image URL..."
-                      className="w-full text-sm"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-gray-700 mb-2 block">
-                    <Sparkles className="w-4 h-4 inline mr-2" />
-                    Animation Style
-                  </Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {animationStyles.map((style) => (
-                      <button
-                        key={style.id}
-                        type="button"
-                        onClick={() => setPopupAnimationStyle(style.id)}
-                        className={`p-3 rounded-xl border-2 text-left transition-all ${
-                          popupAnimationStyle === style.id
-                            ? "border-purple-500 bg-purple-50"
-                            : "border-gray-200 hover:border-purple-300"
-                        }`}
-                      >
-                        <style.icon className={`w-5 h-5 mb-1 ${
-                          popupAnimationStyle === style.id ? "text-purple-600" : "text-gray-400"
-                        }`} />
-                        <p className={`text-sm font-medium ${
-                          popupAnimationStyle === style.id ? "text-purple-700" : "text-gray-700"
-                        }`}>{style.name}</p>
-                        <p className="text-xs text-gray-400">{style.description}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </AdminLayout>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

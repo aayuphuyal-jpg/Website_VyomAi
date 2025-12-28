@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { AdminLayout } from "@/pages/admin/layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -274,245 +273,242 @@ export function SocialMediaIntegrationPage() {
 
     if (loading) {
         return (
-            <AdminLayout>
-                <div className="flex items-center justify-center h-64">
-                    <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-                </div>
-            </AdminLayout>
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+            </div>
         );
     }
 
     return (
-        <AdminLayout>
-            <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <h1 className="text-3xl font-bold">Social Media Integration</h1>
-                        <p className="text-gray-600 mt-1">Connect and sync analytics from your social media platforms</p>
-                    </div>
-                    <Button onClick={handleSyncAll} disabled={syncing === 'all'}>
-                        {syncing === 'all' ? (
-                            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Syncing...</>
-                        ) : (
-                            <><RefreshCw className="w-4 h-4 mr-2" /> Sync All</>
-                        )}
-                    </Button>
+        <div className="space-y-6">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-bold">Social Media Integration</h1>
+                    <p className="text-gray-600 mt-1">Connect and sync analytics from your social media platforms</p>
                 </div>
+                <Button onClick={handleSyncAll} disabled={syncing === 'all'}>
+                    {syncing === 'all' ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Syncing...</>
+                    ) : (
+                        <><RefreshCw className="w-4 h-4 mr-2" /> Sync All</>
+                    )}
+                </Button>
+            </div>
 
-                <Tabs defaultValue="platforms" className="w-full">
-                    <TabsList>
-                        <TabsTrigger value="platforms">Platforms</TabsTrigger>
-                        <TabsTrigger value="logs">Sync Logs</TabsTrigger>
-                    </TabsList>
+            <Tabs defaultValue="platforms" className="w-full">
+                <TabsList>
+                    <TabsTrigger value="platforms">Platforms</TabsTrigger>
+                    <TabsTrigger value="logs">Sync Logs</TabsTrigger>
+                </TabsList>
 
-                    <TabsContent value="platforms" className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {PLATFORMS.map(platform => {
-                                const config = getPlatformConfig(platform.id);
-                                const isConnected = config?.isConnected || false;
+                <TabsContent value="platforms" className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {PLATFORMS.map(platform => {
+                            const config = getPlatformConfig(platform.id);
+                            const isConnected = config?.isConnected || false;
 
-                                return (
-                                    <Card key={platform.id}>
-                                        <CardHeader>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-2xl">{platform.icon}</span>
-                                                    <CardTitle>{platform.name}</CardTitle>
-                                                    <Switch
-                                                        checked={config?.isPublished !== false}
-                                                        onCheckedChange={(val) => handleUpdateConfig(platform.id, { isPublished: val })}
-                                                        title={config?.isPublished ? "Visible on website" : "Hidden from website"}
-                                                    />
-                                                </div>
-                                                {isConnected ? (
-                                                    <Badge className="bg-green-500"><CheckCircle2 className="w-3 h-3 mr-1" /> Connected</Badge>
-                                                ) : (
-                                                    <Badge variant="secondary"><XCircle className="w-3 h-3 mr-1" /> Not Connected</Badge>
-                                                )}
+                            return (
+                                <Card key={platform.id}>
+                                    <CardHeader>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-2xl">{platform.icon}</span>
+                                                <CardTitle>{platform.name}</CardTitle>
+                                                <Switch
+                                                    checked={config?.isPublished !== false}
+                                                    onCheckedChange={(val) => handleUpdateConfig(platform.id, { isPublished: val })}
+                                                    title={config?.isPublished ? "Visible on website" : "Hidden from website"}
+                                                />
                                             </div>
-                                            {config?.accountName && (
-                                                <CardDescription>{config.accountName}</CardDescription>
+                                            {isConnected ? (
+                                                <Badge className="bg-green-500"><CheckCircle2 className="w-3 h-3 mr-1" /> Connected</Badge>
+                                            ) : (
+                                                <Badge variant="secondary"><XCircle className="w-3 h-3 mr-1" /> Not Connected</Badge>
                                             )}
-                                        </CardHeader>
-                                        <CardContent className="space-y-3">
-                                            {config?.lastSyncAt && (
-                                                <div className="text-sm text-gray-600">
-                                                    Last sync: {new Date(config.lastSyncAt).toLocaleString()}
-                                                </div>
-                                            )}
+                                        </div>
+                                        {config?.accountName && (
+                                            <CardDescription>{config.accountName}</CardDescription>
+                                        )}
+                                    </CardHeader>
+                                    <CardContent className="space-y-3">
+                                        {config?.lastSyncAt && (
+                                            <div className="text-sm text-gray-600">
+                                                Last sync: {new Date(config.lastSyncAt).toLocaleString()}
+                                            </div>
+                                        )}
 
-                                            <div className="flex gap-2">
-                                                {isConnected ? (
-                                                    <>
-                                                        <Button
-                                                            size="sm"
-                                                            onClick={() => handleSync(platform.id)}
-                                                            disabled={syncing === platform.id}
-                                                            className="flex-1"
-                                                        >
-                                                            {syncing === platform.id ? (
-                                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                            ) : (
-                                                                <><RefreshCw className="w-4 h-4 mr-1" /> Sync</>
-                                                            )}
-                                                        </Button>
+                                        <div className="flex gap-2">
+                                            {isConnected ? (
+                                                <>
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => handleSync(platform.id)}
+                                                        disabled={syncing === platform.id}
+                                                        className="flex-1"
+                                                    >
+                                                        {syncing === platform.id ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <><RefreshCw className="w-4 h-4 mr-1" /> Sync</>
+                                                        )}
+                                                    </Button>
+                                                    <Dialog>
+                                                        <DialogTrigger asChild>
+                                                            <Button size="sm" variant="outline" onClick={() => setSelectedPlatform(platform.id)}>
+                                                                <Settings className="w-4 h-4" />
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent>
+                                                            <DialogHeader>
+                                                                <DialogTitle>{platform.name} Settings</DialogTitle>
+                                                                <DialogDescription>Configure auto-sync and API credentials</DialogDescription>
+                                                            </DialogHeader>
+                                                            <PlatformSettings
+                                                                platform={platform.id}
+                                                                config={config}
+                                                                onSave={(updates) => handleUpdateConfig(platform.id, updates)}
+                                                                onDisconnect={() => handleDisconnect(platform.id)}
+                                                            />
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                    {config?.isManualMode && (
                                                         <Dialog>
                                                             <DialogTrigger asChild>
-                                                                <Button size="sm" variant="outline" onClick={() => setSelectedPlatform(platform.id)}>
-                                                                    <Settings className="w-4 h-4" />
+                                                                <Button size="sm" variant="outline">
+                                                                    <FileText className="w-4 h-4 mr-1" /> Data
+                                                                </Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="max-w-md">
+                                                                <DialogHeader>
+                                                                    <DialogTitle>Manual Metrics: {platform.name}</DialogTitle>
+                                                                    <DialogDescription>Manually enter your social media stats</DialogDescription>
+                                                                </DialogHeader>
+                                                                <ManualMetricsEditor platform={platform.id} />
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <div className="flex flex-col w-full gap-2">
+                                                    <div className="flex gap-2">
+                                                        <Dialog>
+                                                            <DialogTrigger asChild>
+                                                                <Button
+                                                                    size="sm"
+                                                                    className="flex-1"
+                                                                    onClick={() => setSelectedPlatform(platform.id)}
+                                                                >
+                                                                    {config?.clientId ? (
+                                                                        <><ExternalLink className="w-4 h-4 mr-1" /> Connect</>
+                                                                    ) : (
+                                                                        <><Settings className="w-4 h-4 mr-1" /> Configure</>
+                                                                    )}
                                                                 </Button>
                                                             </DialogTrigger>
                                                             <DialogContent>
                                                                 <DialogHeader>
-                                                                    <DialogTitle>{platform.name} Settings</DialogTitle>
-                                                                    <DialogDescription>Configure auto-sync and API credentials</DialogDescription>
+                                                                    <DialogTitle>Setup {platform.name}</DialogTitle>
+                                                                    <DialogDescription>
+                                                                        {config?.clientId
+                                                                            ? "Click 'Connect' to authorize access via OAuth"
+                                                                            : "Enter your API credentials to get started"
+                                                                        }
+                                                                    </DialogDescription>
                                                                 </DialogHeader>
-                                                                <PlatformSettings
+                                                                <PlatformSetup
                                                                     platform={platform.id}
+                                                                    platformName={platform.name}
                                                                     config={config}
                                                                     onSave={(updates) => handleUpdateConfig(platform.id, updates)}
-                                                                    onDisconnect={() => handleDisconnect(platform.id)}
+                                                                    onConnect={() => handleConnect(platform.id)}
                                                                 />
                                                             </DialogContent>
                                                         </Dialog>
-                                                        {config?.isManualMode && (
-                                                            <Dialog>
-                                                                <DialogTrigger asChild>
-                                                                    <Button size="sm" variant="outline">
-                                                                        <FileText className="w-4 h-4 mr-1" /> Data
-                                                                    </Button>
-                                                                </DialogTrigger>
-                                                                <DialogContent className="max-w-md">
-                                                                    <DialogHeader>
-                                                                        <DialogTitle>Manual Metrics: {platform.name}</DialogTitle>
-                                                                        <DialogDescription>Manually enter your social media stats</DialogDescription>
-                                                                    </DialogHeader>
-                                                                    <ManualMetricsEditor platform={platform.id} />
-                                                                </DialogContent>
-                                                            </Dialog>
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    <div className="flex flex-col w-full gap-2">
-                                                        <div className="flex gap-2">
-                                                            <Dialog>
-                                                                <DialogTrigger asChild>
-                                                                    <Button
-                                                                        size="sm"
-                                                                        className="flex-1"
-                                                                        onClick={() => setSelectedPlatform(platform.id)}
-                                                                    >
-                                                                        {config?.clientId ? (
-                                                                            <><ExternalLink className="w-4 h-4 mr-1" /> Connect</>
-                                                                        ) : (
-                                                                            <><Settings className="w-4 h-4 mr-1" /> Configure</>
-                                                                        )}
-                                                                    </Button>
-                                                                </DialogTrigger>
-                                                                <DialogContent>
-                                                                    <DialogHeader>
-                                                                        <DialogTitle>Setup {platform.name}</DialogTitle>
-                                                                        <DialogDescription>
-                                                                            {config?.clientId
-                                                                                ? "Click 'Connect' to authorize access via OAuth"
-                                                                                : "Enter your API credentials to get started"
-                                                                            }
-                                                                        </DialogDescription>
-                                                                    </DialogHeader>
-                                                                    <PlatformSetup
-                                                                        platform={platform.id}
-                                                                        platformName={platform.name}
-                                                                        config={config}
-                                                                        onSave={(updates) => handleUpdateConfig(platform.id, updates)}
-                                                                        onConnect={() => handleConnect(platform.id)}
-                                                                    />
-                                                                </DialogContent>
-                                                            </Dialog>
-                                                            <Button
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                className={config?.isManualMode ? "bg-orange-100 text-orange-700" : ""}
-                                                                onClick={() => handleUpdateConfig(platform.id, { isManualMode: !config?.isManualMode })}
-                                                            >
-                                                                {config?.isManualMode ? "Using Manual" : "Switch Manual"}
-                                                            </Button>
-                                                        </div>
-                                                        {config?.isManualMode && (
-                                                            <Dialog>
-                                                                <DialogTrigger asChild>
-                                                                    <Button size="sm" variant="outline" className="w-full">
-                                                                        <FileText className="w-4 h-4 mr-1" /> Edit Manual Data
-                                                                    </Button>
-                                                                </DialogTrigger>
-                                                                <DialogContent className="max-w-md">
-                                                                    <DialogHeader>
-                                                                        <DialogTitle>Manual Metrics: {platform.name}</DialogTitle>
-                                                                        <DialogDescription>Manually enter your social media stats</DialogDescription>
-                                                                    </DialogHeader>
-                                                                    <ManualMetricsEditor platform={platform.id} />
-                                                                </DialogContent>
-                                                            </Dialog>
-                                                        )}
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            className={config?.isManualMode ? "bg-orange-100 text-orange-700" : ""}
+                                                            onClick={() => handleUpdateConfig(platform.id, { isManualMode: !config?.isManualMode })}
+                                                        >
+                                                            {config?.isManualMode ? "Using Manual" : "Switch Manual"}
+                                                        </Button>
                                                     </div>
+                                                    {config?.isManualMode && (
+                                                        <Dialog>
+                                                            <DialogTrigger asChild>
+                                                                <Button size="sm" variant="outline" className="w-full">
+                                                                    <FileText className="w-4 h-4 mr-1" /> Edit Manual Data
+                                                                </Button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="max-w-md">
+                                                                <DialogHeader>
+                                                                    <DialogTitle>Manual Metrics: {platform.name}</DialogTitle>
+                                                                    <DialogDescription>Manually enter your social media stats</DialogDescription>
+                                                                </DialogHeader>
+                                                                <ManualMetricsEditor platform={platform.id} />
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="logs">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Sync History</CardTitle>
+                            <CardDescription>Recent synchronization logs</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-2">
+                                {syncLogs.length === 0 ? (
+                                    <p className="text-gray-500 text-center py-8">No sync logs yet</p>
+                                ) : (
+                                    syncLogs.map(log => (
+                                        <div key={log.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-xl">
+                                                    {PLATFORMS.find(p => p.id === log.platform)?.icon}
+                                                </span>
+                                                <div>
+                                                    <div className="font-medium">{log.platform}</div>
+                                                    <div className="text-sm text-gray-600">
+                                                        {new Date(log.syncedAt).toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                {log.status === 'success' ? (
+                                                    <Badge className="bg-green-500">Success</Badge>
+                                                ) : (
+                                                    <Badge variant="destructive">Failed</Badge>
+                                                )}
+                                                {log.metricsUpdated && log.metricsUpdated.length > 0 && (
+                                                    <span className="text-sm text-gray-600">
+                                                        {log.metricsUpdated.join(', ')}
+                                                    </span>
+                                                )}
+                                                {log.errorMessage && (
+                                                    <span className="text-sm text-red-600">{log.errorMessage}</span>
                                                 )}
                                             </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })}
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="logs">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Sync History</CardTitle>
-                                <CardDescription>Recent synchronization logs</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-2">
-                                    {syncLogs.length === 0 ? (
-                                        <p className="text-gray-500 text-center py-8">No sync logs yet</p>
-                                    ) : (
-                                        syncLogs.map(log => (
-                                            <div key={log.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-xl">
-                                                        {PLATFORMS.find(p => p.id === log.platform)?.icon}
-                                                    </span>
-                                                    <div>
-                                                        <div className="font-medium">{log.platform}</div>
-                                                        <div className="text-sm text-gray-600">
-                                                            {new Date(log.syncedAt).toLocaleString()}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    {log.status === 'success' ? (
-                                                        <Badge className="bg-green-500">Success</Badge>
-                                                    ) : (
-                                                        <Badge variant="destructive">Failed</Badge>
-                                                    )}
-                                                    {log.metricsUpdated && log.metricsUpdated.length > 0 && (
-                                                        <span className="text-sm text-gray-600">
-                                                            {log.metricsUpdated.join(', ')}
-                                                        </span>
-                                                    )}
-                                                    {log.errorMessage && (
-                                                        <span className="text-sm text-red-600">{log.errorMessage}</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
-            </div>
-        </AdminLayout>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </div>
     );
+
 }
 
 function PlatformSetup({

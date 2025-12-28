@@ -157,10 +157,14 @@ export class MemStorage implements IStorage {
     this.initializeHomePageDefaults();
     
     // Initialize admin user from environment variables
-    // Default fallback for development (use strong password in production!)
-    const adminUsername = process.env.ADMIN_USERNAME || "admin";
-    const adminPassword = process.env.ADMIN_PASSWORD || "admin123";
-    const adminEmail = process.env.ADMIN_EMAIL || "shekhar@vyomai.cloud";
+    // Initialize admin user from environment variables
+    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminEmail = process.env.ADMIN_EMAIL;
+
+    if (!adminUsername || !adminPassword || !adminEmail) {
+      throw new Error("ADMIN_USERNAME, ADMIN_PASSWORD, and ADMIN_EMAIL environment variables are required");
+    }
     
     // Hash password synchronously using bcryptjs (for initialization only)
     const hashedPassword = bcryptjs.hashSync(adminPassword, 10);
@@ -173,16 +177,17 @@ export class MemStorage implements IStorage {
       email: adminEmail,
     });
     
-    // Add test user for development/testing
-    if (process.env.NODE_ENV !== "production") {
+    // Test user removed for security - use admin account or create via admin panel if needed
+    if (process.env.NODE_ENV !== "production" && process.env.CREATE_TEST_USER === "true") {
       const testPassword = bcryptjs.hashSync("test123", 10);
       const testUserId = randomUUID();
       this.users.set(testUserId, {
         id: testUserId,
-        username: "aayuphuyal",
+        username: "testuser",
         password: testPassword,
-        email: "aayu.phuyal@gmail.com",
+        email: "test@example.com",
       });
+      console.log("⚠️ Test user 'testuser' created (CREATE_TEST_USER=true)");
     }
     
     this.settings = {
